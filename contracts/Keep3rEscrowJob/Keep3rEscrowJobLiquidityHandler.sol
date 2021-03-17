@@ -149,7 +149,6 @@ abstract contract Keep3rEscrowJobLiquidityHandler is IKeep3rEscrowJobLiquidityHa
       jobLiquidityDesiredAmount[_job][_liquidity] = jobLiquidityDesiredAmount[_job][_liquidity].sub(_diff);
     }
 
-    // TODO Add valid liquidity to job
     if (!jobLiquidityActive(_job, _liquidity)) {
       _jobLiquidities[_job].push(_liquidity);
       jobLiquidityId[_job][_liquidity] = _jobLiquidities[_job].length;
@@ -174,7 +173,6 @@ abstract contract Keep3rEscrowJobLiquidityHandler is IKeep3rEscrowJobLiquidityHa
 
     uint256 _jobLiquidityAmount = 0; // TODO Get job liquidity amount from keep3rV1
 
-    // TODO remove valid liquidity from job
     if (_jobLiquidityAmount == 0) {
       uint256 _index = jobLiquidityId[_job][_liquidity].sub(1);
       uint256 _lastIndex = _jobLiquidities[_job].length.sub(1);
