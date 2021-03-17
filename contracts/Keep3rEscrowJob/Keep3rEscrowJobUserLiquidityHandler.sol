@@ -12,6 +12,8 @@ interface IKeep3rEscrowJobUserLiquidityHandler {
   event DepositedLiquidity(address indexed _user, address _lp, uint256 _amount);
   event WithdrewLiquidity(address indexed _user, address _lp, uint256 _amount);
 
+  function liquidityTotalAmount(address _liquidity) external view returns (uint256 _amount);
+
   function userLiquidityTotalAmount(address _user, address _job) external view returns (uint256 _amount);
 
   function userLiquidityIdleAmount(address _user, address _job) external view returns (uint256 _amount);
@@ -21,6 +23,8 @@ abstract contract Keep3rEscrowJobUserLiquidityHandler is Keep3rEscrowJobParamete
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
+  // lp => amount (helps safely collect extra dust)
+  mapping(address => uint256) public override liquidityTotalAmount;
   // user => lp => amount
   mapping(address => mapping(address => uint256)) public override userLiquidityTotalAmount;
   // user => lp => amount
@@ -45,6 +49,7 @@ abstract contract Keep3rEscrowJobUserLiquidityHandler is Keep3rEscrowJobParamete
   ) internal {
     require(_user != address(0), 'Keep3rEscrowJob::zero-user');
     require(_amount > 0, 'Keep3rEscrowJob::amount-bigger-than-zero');
+    liquidityTotalAmount[_lp] = liquidityTotalAmount[_lp].add(_amount);
     userLiquidityTotalAmount[_user][_lp] = userLiquidityTotalAmount[_user][_lp].add(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].add(_amount);
   }
@@ -55,6 +60,7 @@ abstract contract Keep3rEscrowJobUserLiquidityHandler is Keep3rEscrowJobParamete
     uint256 _amount
   ) internal {
     require(userLiquidityTotalAmount[_user][_lp] >= _amount, 'Keep3rEscrowJob::user-insufficient-balance');
+    liquidityTotalAmount[_lp] = liquidityTotalAmount[_lp].sub(_amount);
     userLiquidityTotalAmount[_user][_lp] = userLiquidityTotalAmount[_user][_lp].sub(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].sub(_amount);
   }

@@ -36,8 +36,8 @@ abstract contract Keep3rEscrowJobWork is
 {
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
-    require(_jobLiquidities[_job].length > 0, 'Keep3rEscrowJob::getNextAction:job-has-no-liquidity');
-    address _liquidity = _jobLiquidities[_job][0];
+    require(jobLiquidities[_job].length > 0, 'Keep3rEscrowJob::getNextAction:job-has-no-liquidity');
+    address _liquidity = jobLiquidities[_job][0];
 
     uint256 liquidityProvided1 = keep3rV1.liquidityProvided(address(escrow1), _liquidity, _job);
     uint256 liquidityProvided2 = keep3rV1.liquidityProvided(address(escrow2), _liquidity, _job);
@@ -92,12 +92,12 @@ abstract contract Keep3rEscrowJobWork is
     Actions _action,
     address _job
   ) internal {
-    address _liquidity = _jobLiquidities[_job][0];
+    address _liquidity = jobLiquidities[_job][0];
 
     // AddLiquidityToJob
     if (_action == Actions.AddLiquidityToJob) {
-      for (uint256 i = 0; i < _jobLiquidities[_job].length; i++) {
-        _addLiquidityToJob(_escrow, _jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_escrow));
+      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_escrow));
       }
 
       // ApplyCreditToJob (_unbondLiquidityFromJob, _removeLiquidityFromJob, _addLiquidityToJob)
@@ -105,38 +105,38 @@ abstract contract Keep3rEscrowJobWork is
       address _otherEscrow = _escrow == address(escrow1) ? address(escrow2) : address(escrow1);
 
       // ALWAYS FIRST: Should try to unbondLiquidityFromJob from _otherEscrow
-      for (uint256 i = 0; i < _jobLiquidities[_job].length; i++) {
+      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
         uint256 _liquidityProvided = keep3rV1.liquidityProvided(_otherEscrow, _liquidity, _job);
         uint256 _liquidityAmount = keep3rV1.liquidityAmount(_otherEscrow, _liquidity, _job);
         if (_liquidityProvided > 0 && _liquidityAmount == 0) {
-          _unbondLiquidityFromJob(_otherEscrow, _jobLiquidities[_job][i], _job, _liquidityProvided);
+          _unbondLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job, _liquidityProvided);
         } else {
           //  - if can't unbound then addLiquidity
           uint256 _amount = IERC20(_liquidity).balanceOf(_otherEscrow);
           if (_amount > 0) {
-            _addLiquidityToJob(_otherEscrow, _jobLiquidities[_job][i], _job, _amount);
+            _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, _amount);
           } else {
             //      - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
             uint256 _liquidityAmountsUnbonding = keep3rV1.liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
             uint256 _liquidityUnbonding = keep3rV1.liquidityUnbonding(_otherEscrow, _liquidity, _job);
             if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
-              _removeLiquidityFromJob(_otherEscrow, _jobLiquidities[_job][i], _job);
+              _removeLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job);
               // TODO: is adding liquiditiy to this job again correct?
-              _addLiquidityToJob(_otherEscrow, _jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_otherEscrow));
+              _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_otherEscrow));
             }
           }
         }
       }
       // Run applyCreditToJob
-      for (uint256 i = 0; i < _jobLiquidities[_job].length; i++) {
-        _applyCreditToJob(_escrow, _jobLiquidities[_job][i], _job);
+      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+        _applyCreditToJob(_escrow, jobLiquidities[_job][i], _job);
       }
 
       // RemoveLiquidityFromJob
     } else if (_action == Actions.RemoveLiquidityFromJob) {
-      for (uint256 i = 0; i < _jobLiquidities[_job].length; i++) {
-        _removeLiquidityFromJob(_escrow, _jobLiquidities[_job][i], _job);
-        _addLiquidityToJob(_escrow, _jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_escrow));
+      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+        _removeLiquidityFromJob(_escrow, jobLiquidities[_job][i], _job);
+        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_escrow));
       }
     }
   }
