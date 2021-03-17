@@ -9,14 +9,31 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import './Keep3rEscrowJobParameters.sol';
 
 interface IKeep3rEscrowJobUserLiquidityHandler {
-  event DepositedLiquidity(address indexed _user, address _lp, uint256 _amount);
-  event WithdrewLiquidity(address indexed _user, address _lp, uint256 _amount);
+  event DepositedLiquidity(address indexed _depositor, address _recipient, address _lp, uint256 _amount);
+
+  event WithdrewLiquidity(address indexed _withdrawer, address _recipient, address _lp, uint256 _amount);
 
   function liquidityTotalAmount(address _liquidity) external view returns (uint256 _amount);
 
   function userLiquidityTotalAmount(address _user, address _job) external view returns (uint256 _amount);
 
   function userLiquidityIdleAmount(address _user, address _job) external view returns (uint256 _amount);
+
+  function depositLiquidity(address _lp, uint256 _amount) external;
+
+  function depositLiquidityTo(
+    address _liquidityRecipient,
+    address _lp,
+    uint256 _amount
+  ) external;
+
+  function withdrawLiquidity(address _lp, uint256 _amount) external;
+
+  function withdrawLiquidityTo(
+    address _liquidityRecipient,
+    address _lp,
+    uint256 _amount
+  ) external;
 }
 
 abstract contract Keep3rEscrowJobUserLiquidityHandler is Keep3rEscrowJobParameters, IKeep3rEscrowJobUserLiquidityHandler {
@@ -30,16 +47,27 @@ abstract contract Keep3rEscrowJobUserLiquidityHandler is Keep3rEscrowJobParamete
   // user => lp => amount
   mapping(address => mapping(address => uint256)) public override userLiquidityIdleAmount;
 
-  function _depositLiquidity(address _lp, uint256 _amount) internal {
-    IERC20(_lp).safeTransferFrom(msg.sender, address(this), _amount);
-    _addLiquidity(msg.sender, _lp, _amount);
-    emit DepositedLiquidity(msg.sender, _lp, _amount);
+  function _depositLiquidity(
+    address _liquidityDepositor,
+    address _liquidityRecipient,
+    address _lp,
+    uint256 _amount
+  ) internal {
+    IERC20(_lp).safeTransferFrom(_liquidityDepositor, address(this), _amount);
+    _addLiquidity(_liquidityRecipient, _lp, _amount);
+    emit DepositedLiquidity(_liquidityDepositor, _liquidityRecipient, _lp, _amount);
   }
 
-  function _withdrawLiquidity(address _lp, uint256 _amount) internal {
-    _subLiquidity(msg.sender, _lp, _amount);
-    IERC20(_lp).safeTransfer(address(this), _amount);
-    emit WithdrewLiquidity(msg.sender, _lp, _amount);
+  function _withdrawLiquidity(
+    address _liquidityWithdrawer,
+    address _liquidityRecipient,
+    address _lp,
+    uint256 _amount
+  ) internal {
+    require(userLiquidityIdleAmount[_liquidityWithdrawer][_lp] >= _amount, 'Keep3rEscrowJob::user-insufficient-idle-balance');
+    _subLiquidity(_liquidityWithdrawer, _lp, _amount);
+    IERC20(_lp).safeTransfer(_liquidityRecipient, _amount);
+    emit WithdrewLiquidity(_liquidityWithdrawer, _liquidityRecipient, _lp, _amount);
   }
 
   function _addLiquidity(
@@ -59,7 +87,7 @@ abstract contract Keep3rEscrowJobUserLiquidityHandler is Keep3rEscrowJobParamete
     address _lp,
     uint256 _amount
   ) internal {
-    require(userLiquidityTotalAmount[_user][_lp] >= _amount, 'Keep3rEscrowJob::user-insufficient-balance');
+    require(userLiquidityTotalAmount[_user][_lp] >= _amount, 'Keep3rEscrowJob::amount-bigger-than-total');
     liquidityTotalAmount[_lp] = liquidityTotalAmount[_lp].sub(_amount);
     userLiquidityTotalAmount[_user][_lp] = userLiquidityTotalAmount[_user][_lp].sub(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].sub(_amount);
