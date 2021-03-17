@@ -26,7 +26,7 @@ abstract contract Keep3rEscrowJobJobsLiquidityHandler is IKeep3rEscrowJobJobsLiq
   mapping(address => mapping(address => uint256)) public override jobLiquidityDesiredAmount;
 
   function _addLPToJob(address _lp, address _job) internal {
-    jobLiquidities[_lp].push(_job);
+    jobLiquidities[_job].push(_lp);
     jobLiquidityIndex[_job][_lp] = jobLiquidities[_job].length;
   }
 

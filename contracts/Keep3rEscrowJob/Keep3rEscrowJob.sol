@@ -60,4 +60,19 @@ abstract contract Keep3rEscrowJob is UtilsReady, Keep3rEscrowJobWork, Keep3rEscr
   function setJob(address _job) external override onlyGovernor {
     _setJob(_job);
   }
+
+  // Collectable Dust
+  function sendDust(
+    address _to,
+    address _token,
+    uint256 _amount
+  ) external override onlyGovernor {
+    // TODO Protect _liquidity tokens with liquidityTotalAmount[_liquidity]
+    // TODO Add liquidityIdleTotalAmount[_liquidity]
+    /*
+      uinst256 _idleBalance = IERC20(_token).balanceOf(address(this));
+      require(amount <= liquidityIdleTotalAmount[_liquidity].sub(_idleBalance), 'amount-greater-than-extra-idle-liquidity');
+      _sendDust(_to, _token, _amount);
+       */
+  }
 }
