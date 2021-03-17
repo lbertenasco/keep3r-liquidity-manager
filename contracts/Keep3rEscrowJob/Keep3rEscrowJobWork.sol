@@ -76,7 +76,11 @@ abstract contract Keep3rEscrowJobWork is Keep3rEscrowJobEscrowsHandler, Keep3rEs
   // Keep3r actions
   function workable(address _job) public view override returns (bool) {
     (, Actions _action) = getNextAction(_job);
-    return _action != Actions.None;
+    return _workable(_action);
+  }
+
+  function _workable(Actions _action) internal pure returns (bool) {
+    return (_action != Actions.None);
   }
 
   function _work(
