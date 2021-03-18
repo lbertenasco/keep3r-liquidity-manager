@@ -2,9 +2,6 @@
 
 pragma solidity 0.6.12;
 
-import '@openzeppelin/contracts/math/SafeMath.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-
 import '../interfaces/IKeep3rEscrow.sol';
 
 interface IKeep3rLiquidityManagerEscrowsHandler {
@@ -18,14 +15,13 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
 
   function isValidEscrow(address _escrow) external view returns (bool);
 
-  function isValidLiquidty(address _liquidity) external view returns (bool);
-
   function returnLPsToGovernance(address _escrow) external;
 
   function addLiquidityToJob(
     address _escrow,
     address _liquidity,
-    address _job
+    address _job,
+    uint256 _amount
   ) external;
 
   function applyCreditToJob(
@@ -37,7 +33,8 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
   function unbondLiquidityFromJob(
     address _escrow,
     address _liquidity,
-    address _job
+    address _job,
+    uint256 _amount
   ) external;
 
   function removeLiquidityFromJob(
@@ -74,10 +71,6 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
 
   function isValidEscrow(address _escrow) public view override returns (bool) {
     return address(_escrow) == address(escrow1) || address(_escrow) == address(escrow2);
-  }
-
-  function isValidLiquidty(address _liquidity) public view override returns (bool) {
-    return true;
   }
 
   function _setEscrow1(address _escrow1) internal {

@@ -35,8 +35,8 @@ abstract contract Keep3rLiquidityManagerWork is
     require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
     address _liquidity = jobLiquidities[_job][0];
 
-    uint256 liquidityProvided1 = keep3rV1.liquidityProvided(address(escrow1), _liquidity, _job);
-    uint256 liquidityProvided2 = keep3rV1.liquidityProvided(address(escrow2), _liquidity, _job);
+    uint256 liquidityProvided1 = IKeep3rV1(keep3rV1).liquidityProvided(address(escrow1), _liquidity, _job);
+    uint256 liquidityProvided2 = IKeep3rV1(keep3rV1).liquidityProvided(address(escrow2), _liquidity, _job);
     if (liquidityProvided1 == 0 && liquidityProvided2 == 0) {
       // Only start if both escrow have liquidity
       require(IERC20(_liquidity).balanceOf(address(escrow1)) > 0, 'Keep3rLiquidityManager::getNextAction:escrow1-liquidity-is-0');
@@ -48,28 +48,28 @@ abstract contract Keep3rLiquidityManagerWork is
 
     // The escrow with liquidityAmount is the one to call applyCreditToJob, the other should call unbondLiquidityFromJob
     if (
-      keep3rV1.liquidityAmount(address(escrow1), _liquidity, _job) > 0 &&
-      keep3rV1.liquidityApplied(address(escrow1), _liquidity, _job) < block.timestamp
+      IKeep3rV1(keep3rV1).liquidityAmount(address(escrow1), _liquidity, _job) > 0 &&
+      IKeep3rV1(keep3rV1).liquidityApplied(address(escrow1), _liquidity, _job) < block.timestamp
     ) {
       return (escrow1, Actions.ApplyCreditToJob);
     }
 
     if (
-      keep3rV1.liquidityAmount(address(escrow2), _liquidity, _job) > 0 &&
-      keep3rV1.liquidityApplied(address(escrow2), _liquidity, _job) < block.timestamp
+      IKeep3rV1(keep3rV1).liquidityAmount(address(escrow2), _liquidity, _job) > 0 &&
+      IKeep3rV1(keep3rV1).liquidityApplied(address(escrow2), _liquidity, _job) < block.timestamp
     ) {
       return (escrow2, Actions.ApplyCreditToJob);
     }
 
     // Check if we can _removeLiquidityFromJob & instantly _addLiquidityToJob
-    uint256 liquidityAmountsUnbonding1 = keep3rV1.liquidityAmountsUnbonding(address(escrow1), _liquidity, _job);
-    uint256 liquidityUnbonding1 = keep3rV1.liquidityUnbonding(address(escrow1), _liquidity, _job);
+    uint256 liquidityAmountsUnbonding1 = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(address(escrow1), _liquidity, _job);
+    uint256 liquidityUnbonding1 = IKeep3rV1(keep3rV1).liquidityUnbonding(address(escrow1), _liquidity, _job);
     if (liquidityAmountsUnbonding1 > 0 && liquidityUnbonding1 < block.timestamp) {
       return (escrow1, Actions.RemoveLiquidityFromJob);
     }
 
-    uint256 liquidityAmountsUnbonding2 = keep3rV1.liquidityAmountsUnbonding(address(escrow2), _liquidity, _job);
-    uint256 liquidityUnbonding2 = keep3rV1.liquidityUnbonding(address(escrow2), _liquidity, _job);
+    uint256 liquidityAmountsUnbonding2 = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(address(escrow2), _liquidity, _job);
+    uint256 liquidityUnbonding2 = IKeep3rV1(keep3rV1).liquidityUnbonding(address(escrow2), _liquidity, _job);
     if (liquidityAmountsUnbonding2 > 0 && liquidityUnbonding2 < block.timestamp) {
       return (escrow2, Actions.RemoveLiquidityFromJob);
     }
@@ -106,8 +106,8 @@ abstract contract Keep3rLiquidityManagerWork is
 
       // ALWAYS FIRST: Should try to unbondLiquidityFromJob from _otherEscrow
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        uint256 _liquidityProvided = keep3rV1.liquidityProvided(_otherEscrow, _liquidity, _job);
-        uint256 _liquidityAmount = keep3rV1.liquidityAmount(_otherEscrow, _liquidity, _job);
+        uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_otherEscrow, _liquidity, _job);
+        uint256 _liquidityAmount = IKeep3rV1(keep3rV1).liquidityAmount(_otherEscrow, _liquidity, _job);
         if (_liquidityProvided > 0 && _liquidityAmount == 0) {
           _unbondLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job, _liquidityProvided);
         } else {
@@ -117,8 +117,8 @@ abstract contract Keep3rLiquidityManagerWork is
             _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, _amount);
           } else {
             //      - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
-            uint256 _liquidityAmountsUnbonding = keep3rV1.liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
-            uint256 _liquidityUnbonding = keep3rV1.liquidityUnbonding(_otherEscrow, _liquidity, _job);
+            uint256 _liquidityAmountsUnbonding = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
+            uint256 _liquidityUnbonding = IKeep3rV1(keep3rV1).liquidityUnbonding(_otherEscrow, _liquidity, _job);
             if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
               _removeLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job);
               // TODO: is adding liquiditiy to this job again correct?

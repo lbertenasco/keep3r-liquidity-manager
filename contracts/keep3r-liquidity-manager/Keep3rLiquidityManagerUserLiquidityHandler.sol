@@ -47,6 +47,30 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   // user => lp => amount
   mapping(address => mapping(address => uint256)) public override userLiquidityIdleAmount;
 
+  function depositLiquidity(address _lp, uint256 _amount) public virtual override {
+    depositLiquidityTo(msg.sender, _lp, _amount);
+  }
+
+  function depositLiquidityTo(
+    address _liquidityRecipient,
+    address _lp,
+    uint256 _amount
+  ) public virtual override {
+    _depositLiquidity(msg.sender, _liquidityRecipient, _lp, _amount);
+  }
+
+  function withdrawLiquidity(address _lp, uint256 _amount) public virtual override {
+    withdrawLiquidityTo(msg.sender, _lp, _amount);
+  }
+
+  function withdrawLiquidityTo(
+    address _liquidityRecipient,
+    address _lp,
+    uint256 _amount
+  ) public virtual override {
+    _withdrawLiquidity(msg.sender, _liquidityRecipient, _lp, _amount);
+  }
+
   function _depositLiquidity(
     address _liquidityDepositor,
     address _liquidityRecipient,
