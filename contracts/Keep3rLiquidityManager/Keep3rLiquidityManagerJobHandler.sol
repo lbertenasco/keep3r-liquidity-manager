@@ -2,13 +2,13 @@
 
 pragma solidity 0.6.12;
 
-interface IKeep3rEscrowJobJobHandler {
+interface IKeep3rLiquidityManagerJobHandler {
   function job() external view returns (address _job);
 
   function setJob(address _job) external;
 }
 
-abstract contract Keep3rEscrowJobJobHandler is IKeep3rEscrowJobJobHandler {
+abstract contract Keep3rLiquidityManagerJobHandler is IKeep3rLiquidityManagerJobHandler {
   address public override job;
 
   function _setJob(address _job) internal {

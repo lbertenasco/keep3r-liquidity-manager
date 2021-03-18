@@ -4,13 +4,13 @@ pragma solidity 0.6.12;
 
 import '@lbertenasco/contract-utils/interfaces/keep3r/IKeep3rV1.sol';
 
-interface IKeep3rEscrowJobParameters {
+interface IKeep3rLiquidityManagerParameters {
   event Keep3rV1Set(address _keep3rV1);
 
   function keep3rV1() external view returns (IKeep3rV1);
 }
 
-abstract contract Keep3rEscrowJobParameters is IKeep3rEscrowJobParameters {
+abstract contract Keep3rLiquidityManagerParameters is IKeep3rLiquidityManagerParameters {
   IKeep3rV1 public override keep3rV1;
 
   constructor(address _keep3rV1) public {

@@ -5,10 +5,10 @@ pragma solidity 0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import './Keep3rEscrowJobUserLiquidityHandler.sol';
-import './Keep3rEscrowJobJobsLiquidityHandler.sol';
+import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
+import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
 
-interface IKeep3rEscrowJobUserJobsLiquidityHandler {
+interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
   function userJobLiquidityAmount(
     address _user,
     address _job,
@@ -38,10 +38,10 @@ interface IKeep3rEscrowJobUserJobsLiquidityHandler {
   ) external returns (bool);
 }
 
-abstract contract Keep3rEscrowJobUserJobsLiquidityHandler is
-  Keep3rEscrowJobUserLiquidityHandler,
-  Keep3rEscrowJobJobsLiquidityHandler,
-  IKeep3rEscrowJobUserJobsLiquidityHandler
+abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
+  Keep3rLiquidityManagerUserLiquidityHandler,
+  Keep3rLiquidityManagerJobsLiquidityHandler,
+  IKeep3rLiquidityManagerUserJobsLiquidityHandler
 {
   using SafeMath for uint256;
 
@@ -64,7 +64,7 @@ abstract contract Keep3rEscrowJobUserJobsLiquidityHandler is
   ) internal returns (bool) {
     _amount = _amount.div(2).mul(2); // removes potential decimal dust
 
-    require(_amount != userJobLiquidityAmount[_user][_job][_lp], 'Keep3rEscrowJob::same-liquidity-amount');
+    require(_amount != userJobLiquidityAmount[_user][_job][_lp], 'Keep3rLiquidityManager::same-liquidity-amount');
 
     userJobCycle[_user][_job] = jobCycle[_job];
 
@@ -82,10 +82,10 @@ abstract contract Keep3rEscrowJobUserJobsLiquidityHandler is
     uint256 _amount
   ) external returns (bool) {
     _amount = _amount.div(2).mul(2); // removes potential decimal dust
-    require(jobCycle[_job] >= userJobCycle[_user][_job].add(2), 'Keep3rEscrowJob::liquidity-still-locked');
+    require(jobCycle[_job] >= userJobCycle[_user][_job].add(2), 'Keep3rLiquidityManager::liquidity-still-locked');
 
     uint256 _idleAmount = userJobLiquidityLockedAmount[_user][_job][_lp].sub(userJobLiquidityAmount[_user][_job][_lp]);
-    require(_amount <= _idleAmount, 'Keep3rEscrowJob::amount-bigger-than-idle-available');
+    require(_amount <= _idleAmount, 'Keep3rLiquidityManager::amount-bigger-than-idle-available');
 
     userJobLiquidityLockedAmount[_user][_job][_lp] = userJobLiquidityLockedAmount[_user][_job][_lp].sub(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].add(_amount);
@@ -101,8 +101,8 @@ abstract contract Keep3rEscrowJobUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
-    require(_amount > 0, 'Keep3rEscrowJob::zero-amount');
-    require(_amount >= userLiquidityIdleAmount[_user][_lp], 'Keep3rEscrowJob::no-idle-liquidity-available');
+    require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
+    require(_amount >= userLiquidityIdleAmount[_user][_lp], 'Keep3rLiquidityManager::no-idle-liquidity-available');
     // set liquidity amount on user-job
     userJobLiquidityAmount[_user][_job][_lp] = userJobLiquidityAmount[_user][_job][_lp].add(_amount);
     // increase user-job liquidity locked amount
@@ -121,7 +121,7 @@ abstract contract Keep3rEscrowJobUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
-    require(_amount <= userJobLiquidityAmount[_user][_job][_lp], 'Keep3rEscrowJob::not-enough-lp-in-job');
+    require(_amount <= userJobLiquidityAmount[_user][_job][_lp], 'Keep3rLiquidityManager::not-enough-lp-in-job');
     userJobLiquidityAmount[_user][_job][_lp] = userJobLiquidityAmount[_user][_job][_lp].sub(_amount);
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].sub(_amount);
   }

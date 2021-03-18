@@ -7,7 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
 import '../interfaces/IKeep3rEscrow.sol';
 
-interface IKeep3rEscrowJobEscrowsHandler {
+interface IKeep3rLiquidityManagerEscrowsHandler {
   event Escrow1Set(address _escrow1);
 
   event Escrow2Set(address _escrow2);
@@ -58,7 +58,7 @@ interface IKeep3rEscrowJobEscrowsHandler {
   ) external;
 }
 
-abstract contract Keep3rEscrowJobEscrowsHandler is IKeep3rEscrowJobEscrowsHandler {
+abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManagerEscrowsHandler {
   address public override escrow1;
   address public override escrow2;
 
@@ -68,7 +68,7 @@ abstract contract Keep3rEscrowJobEscrowsHandler is IKeep3rEscrowJobEscrowsHandle
   }
 
   modifier _assertIsValidEscrow(address _escrow) {
-    require(!isValidEscrow(_escrow), 'Keep3rEscrowJob::invalid-escrow');
+    require(!isValidEscrow(_escrow), 'Keep3rLiquidityManager::invalid-escrow');
     _;
   }
 
@@ -81,15 +81,15 @@ abstract contract Keep3rEscrowJobEscrowsHandler is IKeep3rEscrowJobEscrowsHandle
   }
 
   function _setEscrow1(address _escrow1) internal {
-    require(address(_escrow1) != address(0), 'Keep3rEscrowJob::zero-address');
-    require(IKeep3rEscrow(_escrow1).isKeep3rEscrow(), 'Keep3rEscrowJob::not-keep3r-escrow');
+    require(address(_escrow1) != address(0), 'Keep3rLiquidityManager::zero-address');
+    require(IKeep3rEscrow(_escrow1).isKeep3rEscrow(), 'Keep3rLiquidityManager::not-keep3r-escrow');
     escrow1 = _escrow1;
     emit Escrow1Set(_escrow1);
   }
 
   function _setEscrow2(address _escrow2) internal {
-    require(address(_escrow2) != address(0), 'Keep3rEscrowJob::zero-address');
-    require(IKeep3rEscrow(_escrow2).isKeep3rEscrow(), 'Keep3rEscrowJob::not-keep3r-escrow');
+    require(address(_escrow2) != address(0), 'Keep3rLiquidityManager::zero-address');
+    require(IKeep3rEscrow(_escrow2).isKeep3rEscrow(), 'Keep3rLiquidityManager::not-keep3r-escrow');
     escrow2 = _escrow2;
     emit Escrow2Set(_escrow2);
   }

@@ -5,10 +5,10 @@ pragma solidity 0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import './Keep3rEscrowJobEscrowsHandler.sol';
-import './Keep3rEscrowJobUserJobsLiquidityHandler.sol';
+import './Keep3rLiquidityManagerEscrowsHandler.sol';
+import './Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
 
-interface IKeep3rEscrowJobWork {
+interface IKeep3rLiquidityManagerWork {
   enum Actions { None, AddLiquidityToJob, ApplyCreditToJob, RemoveLiquidityFromJob }
 
   // Actions by Keeper
@@ -25,18 +25,22 @@ interface IKeep3rEscrowJobWork {
   function forceWork(address _job) external;
 }
 
-abstract contract Keep3rEscrowJobWork is Keep3rEscrowJobEscrowsHandler, Keep3rEscrowJobUserJobsLiquidityHandler, IKeep3rEscrowJobWork {
+abstract contract Keep3rLiquidityManagerWork is
+  Keep3rLiquidityManagerEscrowsHandler,
+  Keep3rLiquidityManagerUserJobsLiquidityHandler,
+  IKeep3rLiquidityManagerWork
+{
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
-    require(jobLiquidities[_job].length > 0, 'Keep3rEscrowJob::getNextAction:job-has-no-liquidity');
+    require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
     address _liquidity = jobLiquidities[_job][0];
 
     uint256 liquidityProvided1 = keep3rV1.liquidityProvided(address(escrow1), _liquidity, _job);
     uint256 liquidityProvided2 = keep3rV1.liquidityProvided(address(escrow2), _liquidity, _job);
     if (liquidityProvided1 == 0 && liquidityProvided2 == 0) {
       // Only start if both escrow have liquidity
-      require(IERC20(_liquidity).balanceOf(address(escrow1)) > 0, 'Keep3rEscrowJob::getNextAction:escrow1-liquidity-is-0');
-      require(IERC20(_liquidity).balanceOf(address(escrow2)) > 0, 'Keep3rEscrowJob::getNextAction:escrow2-liquidity-is-0');
+      require(IERC20(_liquidity).balanceOf(address(escrow1)) > 0, 'Keep3rLiquidityManager::getNextAction:escrow1-liquidity-is-0');
+      require(IERC20(_liquidity).balanceOf(address(escrow2)) > 0, 'Keep3rLiquidityManager::getNextAction:escrow2-liquidity-is-0');
 
       // Start by _addLiquidityToJob liquidity with escrow1 as default
       return (escrow1, Actions.AddLiquidityToJob);

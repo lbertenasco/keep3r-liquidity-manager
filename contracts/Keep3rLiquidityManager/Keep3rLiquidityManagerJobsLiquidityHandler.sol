@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
-interface IKeep3rEscrowJobJobsLiquidityHandler {
+interface IKeep3rLiquidityManagerJobsLiquidityHandler {
   function jobLiquidities(address _job, uint256 _index) external view returns (address _liquidity);
 
   function jobLiquidityIndex(address _job, address _liquidity) external view returns (uint256 _index);
@@ -14,7 +14,7 @@ interface IKeep3rEscrowJobJobsLiquidityHandler {
   function jobLiquidityDesiredAmount(address _job, address _liquidity) external view returns (uint256 _amount);
 }
 
-abstract contract Keep3rEscrowJobJobsLiquidityHandler is IKeep3rEscrowJobJobsLiquidityHandler {
+abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidityManagerJobsLiquidityHandler {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
