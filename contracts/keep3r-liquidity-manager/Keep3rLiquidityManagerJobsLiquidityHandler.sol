@@ -3,8 +3,6 @@
 pragma solidity 0.6.12;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
 interface IKeep3rLiquidityManagerJobsLiquidityHandler {
   function jobLiquidities(address _job, uint256 _index) external view returns (address _liquidity);
@@ -16,7 +14,6 @@ interface IKeep3rLiquidityManagerJobsLiquidityHandler {
 
 abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidityManagerJobsLiquidityHandler {
   using SafeMath for uint256;
-  using SafeERC20 for IERC20;
 
   // job => lp[]
   mapping(address => address[]) public override jobLiquidities;

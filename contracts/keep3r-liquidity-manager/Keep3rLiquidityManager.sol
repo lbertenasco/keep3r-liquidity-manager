@@ -9,37 +9,13 @@ import '@lbertenasco/contract-utils/contracts/abstract/UtilsReady.sol';
 import './Keep3rLiquidityManagerWork.sol';
 import './Keep3rLiquidityManagerJobHandler.sol';
 
+// TODO: Should not be abstract
 abstract contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3rLiquidityManagerJobHandler {
   constructor(
     address _keep3rV1,
     address _escrow1,
     address _escrow2
   ) public UtilsReady() Keep3rLiquidityManagerParameters(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
-
-  // Keep3rLiquidityManagerUserLiquidityHandler
-  function depositLiquidity(address _lp, uint256 _amount) public override {
-    depositLiquidityTo(msg.sender, _lp, _amount);
-  }
-
-  function depositLiquidityTo(
-    address _liquidityRecipient,
-    address _lp,
-    uint256 _amount
-  ) public override {
-    _depositLiquidity(msg.sender, _liquidityRecipient, _lp, _amount);
-  }
-
-  function withdrawLiquidity(address _lp, uint256 _amount) public override {
-    withdrawLiquidityTo(msg.sender, _lp, _amount);
-  }
-
-  function withdrawLiquidityTo(
-    address _liquidityRecipient,
-    address _lp,
-    uint256 _amount
-  ) public override {
-    _withdrawLiquidity(msg.sender, _liquidityRecipient, _lp, _amount);
-  }
 
   // Keep3rLiquidityManagerWork
   function work(address _job) external override onlyJob {
