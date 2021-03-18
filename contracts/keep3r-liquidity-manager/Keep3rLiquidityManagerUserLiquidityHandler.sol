@@ -15,9 +15,9 @@ interface IKeep3rLiquidityManagerUserLiquidityHandler {
 
   function liquidityTotalAmount(address _liquidity) external view returns (uint256 _amount);
 
-  function userLiquidityTotalAmount(address _user, address _job) external view returns (uint256 _amount);
+  function userLiquidityTotalAmount(address _user, address _lp) external view returns (uint256 _amount);
 
-  function userLiquidityIdleAmount(address _user, address _job) external view returns (uint256 _amount);
+  function userLiquidityIdleAmount(address _user, address _lp) external view returns (uint256 _amount);
 
   function depositLiquidity(address _lp, uint256 _amount) external;
 

@@ -18,7 +18,7 @@ abstract contract Keep3rLiquidityManagerParameters is IKeep3rLiquidityManagerPar
   }
 
   function _setKeep3rV1(address _keep3rV1) internal {
-    require(_keep3rV1 != address(0), 'error');
+    require(_keep3rV1 != address(0), 'Keep3rLiquidityManager::zero-address');
     keep3rV1 = _keep3rV1;
     emit Keep3rV1Set(_keep3rV1);
   }

@@ -14,11 +14,17 @@ const checkTxRevertedWithMessage = async ({
   tx,
   message,
 }: {
-  tx: Promise<TransactionRequest>;
-  message: RegExp;
+  tx: Promise<TransactionRequest> | TransactionRequest;
+  message: RegExp | string;
 }): Promise<void> => {
   await expect(tx).to.be.reverted;
-  await expect(tx).eventually.rejected.have.property('message').match(message);
+  if (message instanceof RegExp) {
+    await expect(tx)
+      .eventually.rejected.have.property('message')
+      .match(message);
+  } else {
+    await expect(tx).to.be.revertedWith(message);
+  }
 };
 
 const checkTxRevertedWithZeroAddress = async (
@@ -54,6 +60,21 @@ const txShouldRevertWithZeroAddress = async ({
 }): Promise<void> => {
   const tx = contract[func].apply(this, args);
   await checkTxRevertedWithZeroAddress(tx);
+};
+
+const txShouldRevertWithMessage = async ({
+  contract,
+  func,
+  args,
+  message,
+}: {
+  contract: Contract;
+  func: string;
+  args: any[];
+  message: string;
+}): Promise<void> => {
+  const tx = contract[func].apply(this, args);
+  await checkTxRevertedWithMessage({ tx, message });
 };
 
 const checkTxEmittedEvents = async ({
@@ -172,8 +193,10 @@ const txShouldSetVariableAndEmitEvent = async ({
 };
 
 export default {
+  checkTxRevertedWithMessage,
   deployShouldRevertWithZeroAddress,
   txShouldRevertWithZeroAddress,
+  txShouldRevertWithMessage,
   deployShouldSetVariablesAndEmitEvents,
   txShouldHaveSetVariablesAndEmitEvents,
   txShouldSetVariableAndEmitEvent,
