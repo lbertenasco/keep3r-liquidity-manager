@@ -15,7 +15,7 @@ import { ethers } from 'hardhat';
 import { constants, bdd, erc20 } from '../../utils';
 const { when, given, then } = bdd;
 
-describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
+describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
   let owner: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
