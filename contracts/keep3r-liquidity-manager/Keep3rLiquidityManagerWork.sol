@@ -24,6 +24,8 @@ interface IKeep3rLiquidityManagerWork {
   function forceWork(address _job) external;
 }
 
+// IMPORTANT!
+// TODO SIMPLIFY WITH STEPS AND COOLDOWNS!
 abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLiquidityHandler, IKeep3rLiquidityManagerWork {
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
@@ -92,7 +94,7 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
     // AddLiquidityToJob
     if (_action == Actions.AddLiquidityToJob) {
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_escrow));
+        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, jobLiquidityDesiredAmount[_job][_liquidity]);
       }
 
       // ApplyCreditToJob (_unbondLiquidityFromJob, _removeLiquidityFromJob, _addLiquidityToJob)
@@ -106,19 +108,13 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         if (_liquidityProvided > 0 && _liquidityAmount == 0) {
           _unbondLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job, _liquidityProvided);
         } else {
-          //  - if can't unbound then addLiquidity
-          uint256 _amount = IERC20(_liquidity).balanceOf(_otherEscrow);
-          if (_amount > 0) {
-            _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, _amount);
-          } else {
-            //      - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
-            uint256 _liquidityAmountsUnbonding = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
-            uint256 _liquidityUnbonding = IKeep3rV1(keep3rV1).liquidityUnbonding(_otherEscrow, _liquidity, _job);
-            if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
-              _removeLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job);
-              // TODO: is adding liquiditiy to this job again correct?
-              _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_otherEscrow));
-            }
+          //  - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
+          uint256 _liquidityAmountsUnbonding = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
+          uint256 _liquidityUnbonding = IKeep3rV1(keep3rV1).liquidityUnbonding(_otherEscrow, _liquidity, _job);
+          if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
+            _removeLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job);
+            // TODO: is adding liquiditiy to this job again correct?
+            _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, jobLiquidityDesiredAmount[_job][_liquidity]);
           }
         }
       }
@@ -131,8 +127,17 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
     } else if (_action == Actions.RemoveLiquidityFromJob) {
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
         _removeLiquidityFromJob(_escrow, jobLiquidities[_job][i], _job);
-        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, IERC20(_liquidity).balanceOf(_escrow));
+        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, jobLiquidityDesiredAmount[_job][_liquidity]);
       }
+    }
+
+    // Try to clean LP after execution
+    for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+      uint256 _liquidityInUse =
+        IKeep3rEscrow(escrow1).liquidityTotalAmount(jobLiquidities[_job][i]).add(
+          IKeep3rEscrow(escrow2).liquidityTotalAmount(jobLiquidities[_job][i])
+        );
+      if (_liquidityInUse == 0) _removeLPFromJob(jobLiquidities[_job][i], _job);
     }
   }
 }

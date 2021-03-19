@@ -2,6 +2,9 @@
 
 pragma solidity 0.6.12;
 
+import '@lbertenasco/contract-utils/interfaces/utils/IGovernable.sol';
+import '@lbertenasco/contract-utils/interfaces/utils/ICollectableDust.sol';
+
 import '../escrow/IKeep3rEscrow.sol';
 
 interface IKeep3rLiquidityManagerEscrowsHandler {
@@ -118,11 +121,11 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
   }
 
   function _setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).setPendingGovernor(_pendingGovernor);
+    IGovernable(_escrow).setPendingGovernor(_pendingGovernor);
   }
 
   function _acceptGovernorOnEscrow(address _escrow) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).acceptGovernor();
+    IGovernable(_escrow).acceptGovernor();
   }
 
   function _sendDustOnEscrow(
@@ -131,6 +134,6 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
     address _token,
     uint256 _amount
   ) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).sendDust(_to, _token, _amount);
+    ICollectableDust(_escrow).sendDust(_to, _token, _amount);
   }
 }
