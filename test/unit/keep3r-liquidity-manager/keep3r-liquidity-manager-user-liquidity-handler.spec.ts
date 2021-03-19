@@ -45,28 +45,159 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
 
   describe('addLiquidity', () => {
     when('user is zero address', () => {
-      then('tx is reverted with reason');
+      then('tx is reverted with reason', async () => {
+        await expect(
+          keep3rLiquidityManagerUserLiquidityHandler.addLiquidity(
+            constants.ZERO_ADDRESS,
+            lp.address,
+            BigNumber.from('100')
+          )
+        ).to.be.revertedWith('Keep3rLiquidityManager::zero-user');
+      });
     });
     when('amount is zero', () => {
-      then('tx is reverted with reaso');
+      then('tx is reverted with reason', async () => {
+        await expect(
+          keep3rLiquidityManagerUserLiquidityHandler.addLiquidity(
+            alice.address,
+            lp.address,
+            0
+          )
+        ).to.be.revertedWith('Keep3rLiquidityManager::amount-bigger-than-zero');
+      });
     });
     when('adding valid liquidity', () => {
-      then('total liquidity amount increases');
-      then('total user liquidity amount increases');
-      then('total user idle liquidity amount increases');
+      const liquidityToAdd = utils.parseEther('10');
+      given(async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(0);
+        await keep3rLiquidityManagerUserLiquidityHandler.addLiquidity(
+          alice.address,
+          lp.address,
+          liquidityToAdd
+        );
+      });
+      then('total liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(liquidityToAdd);
+      });
+      then('total user liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            alice.address,
+            lp.address
+          )
+        ).to.equal(liquidityToAdd);
+      });
+      then('total user idle liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            alice.address,
+            lp.address
+          )
+        ).to.equal(liquidityToAdd);
+      });
     });
   });
   describe('subLiquidity', () => {
-    when('user does is zero address', () => {
-      then('tx is reverted with reason');
+    when('user is zero address', () => {
+      then('tx is reverted with reason', async () => {
+        await expect(
+          keep3rLiquidityManagerUserLiquidityHandler.subLiquidity(
+            constants.ZERO_ADDRESS,
+            lp.address,
+            BigNumber.from('100')
+          )
+        ).to.be.revertedWith(
+          'Keep3rLiquidityManager::amount-bigger-than-total'
+        );
+      });
     });
     when('user does not have enough total liquidity', () => {
-      then('tx is reverted with reason');
+      then('tx is reverted with reason', async () => {
+        await expect(
+          keep3rLiquidityManagerUserLiquidityHandler.subLiquidity(
+            owner.address,
+            lp.address,
+            BigNumber.from('100')
+          )
+        ).to.be.revertedWith(
+          'Keep3rLiquidityManager::amount-bigger-than-total'
+        );
+      });
     });
     when('subtracting valid liquidity', () => {
-      then('total liquidity amount decreases');
-      then('total user liquidity amount decreases');
-      then('total user idle liquidity amount decreases');
+      const liquidity = utils.parseEther('15');
+      given(async () => {
+        await keep3rLiquidityManagerUserLiquidityHandler.addLiquidity(
+          owner.address,
+          lp.address,
+          liquidity
+        );
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(liquidity);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(liquidity);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(liquidity);
+        await keep3rLiquidityManagerUserLiquidityHandler.subLiquidity(
+          owner.address,
+          lp.address,
+          liquidity
+        );
+      });
+      then('total liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(0);
+      });
+      then('total user liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(0);
+      });
+      then('total user idle liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(0);
+      });
     });
   });
 
@@ -76,7 +207,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
 
     when('contract is not approved to move funds', () => {
       then('tx is reverted with reason', async () => {
-        expect(
+        await expect(
           keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
             owner.address,
             alice.address,
@@ -96,7 +227,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           );
         });
         then('tx is reverted with reason', async () => {
-          expect(
+          await expect(
             keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
               owner.address,
               alice.address,
