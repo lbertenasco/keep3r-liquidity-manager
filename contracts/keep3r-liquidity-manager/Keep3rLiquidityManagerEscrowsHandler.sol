@@ -75,14 +75,12 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
 
   function _setEscrow1(address _escrow1) internal {
     require(address(_escrow1) != address(0), 'Keep3rLiquidityManager::zero-address');
-    require(IKeep3rEscrow(_escrow1).isKeep3rEscrow(), 'Keep3rLiquidityManager::not-keep3r-escrow');
     escrow1 = _escrow1;
     emit Escrow1Set(_escrow1);
   }
 
   function _setEscrow2(address _escrow2) internal {
     require(address(_escrow2) != address(0), 'Keep3rLiquidityManager::zero-address');
-    require(IKeep3rEscrow(_escrow2).isKeep3rEscrow(), 'Keep3rLiquidityManager::not-keep3r-escrow');
     escrow2 = _escrow2;
     emit Escrow2Set(_escrow2);
   }
@@ -119,10 +117,6 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
     address _job
   ) internal _assertIsValidEscrow(_escrow) {
     IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
-  }
-
-  function _returnLPsToGovernance(address _escrow) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).returnLPsToGovernance();
   }
 
   function _setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) internal _assertIsValidEscrow(_escrow) {
