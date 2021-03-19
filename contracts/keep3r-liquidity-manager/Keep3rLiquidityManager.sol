@@ -75,4 +75,13 @@ abstract contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWo
       _sendDust(_to, _token, _amount);
        */
   }
+
+  function sendDustOnEscrow(
+    address _escrow,
+    address _to,
+    address _token,
+    uint256 _amount
+  ) external override onlyGovernor {
+    _sendDustOnEscrow(_escrow, _to, _token, _amount);
+  }
 }
