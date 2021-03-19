@@ -49,4 +49,27 @@ contract Keep3rLiquidityManagerUserLiquidityHandlerMock is
   ) public {
     _subLiquidity(_user, _lp, _amount);
   }
+
+  function setLiquidityTotalAmount(
+    address _lp,
+    uint256 _amount
+  ) public {
+    liquidityTotalAmount[_lp] = _amount;
+  }
+
+  function setUserLiquidityTotalAmount(
+    address _user,
+    address _lp,
+    uint256 _amount
+  ) public {
+    userLiquidityTotalAmount[_user][_lp] = _amount;
+  }
+
+  function setUserLiquidityIdleAmount(
+    address _user,
+    address _lp,
+    uint256 _amount
+  ) public {
+    userLiquidityIdleAmount[_user][_lp] = _amount;
+  }
 }

@@ -12,8 +12,7 @@ import {
   utils,
 } from 'ethers';
 import { ethers } from 'hardhat';
-import { behaviours, constants, bdd, erc20 } from '../../utils';
-import { Address } from 'node:cluster';
+import { constants, bdd, erc20 } from '../../utils';
 const { when, given, then } = bdd;
 
 describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
@@ -39,7 +38,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
       name: 'lp1',
       symbol: 'LP1',
       initialAccount: owner.address,
-      initialAmount: utils.parseEther('10000'),
+      initialAmount: utils.parseEther('0'),
     });
   });
 
@@ -206,42 +205,46 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
     let depositTxResponse: TransactionResponse;
 
     when('contract is not approved to move funds', () => {
+      given(async () => {
+        await lp.mint(owner.address, fundsToMove);
+        depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
+          owner.address,
+          alice.address,
+          lp.address,
+          fundsToMove
+        );
+      });
       then('tx is reverted with reason', async () => {
-        await expect(
-          keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
-            owner.address,
-            alice.address,
-            lp.address,
-            fundsToMove
-          )
-        ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+        await expect(depositTxResponse).to.be.revertedWith(
+          'ERC20: transfer amount exceeds allowance'
+        );
       });
     });
     when(
       'contract is not approved to move same amount of deposited funds',
       () => {
         given(async () => {
+          await lp.mint(owner.address, fundsToMove);
           await lp.approve(
             keep3rLiquidityManagerUserLiquidityHandler.address,
             fundsToMove.sub(1)
           );
+          depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
+            owner.address,
+            alice.address,
+            lp.address,
+            fundsToMove
+          );
         });
         then('tx is reverted with reason', async () => {
-          await expect(
-            keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
-              owner.address,
-              alice.address,
-              lp.address,
-              fundsToMove
-            )
-          ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+          await expect(depositTxResponse).to.be.revertedWith(
+            'ERC20: transfer amount exceeds allowance'
+          );
         });
       }
     );
     when('contract is approved to move funds', () => {
-      let initialDepositorBalance: BigNumber;
       given(async () => {
-        initialDepositorBalance = await lp.balanceOf(owner.address);
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
@@ -259,6 +262,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             lp.address
           )
         ).to.equal(0);
+        await lp.mint(owner.address, fundsToMove);
         await lp.approve(
           keep3rLiquidityManagerUserLiquidityHandler.address,
           fundsToMove
@@ -272,9 +276,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
       });
 
       then('depositor funds are moved', async () => {
-        expect(await lp.balanceOf(owner.address)).to.equal(
-          initialDepositorBalance.sub(fundsToMove)
-        );
+        expect(await lp.balanceOf(owner.address)).to.equal(0);
       });
       then('event is emitted', async () => {
         await expect(depositTxResponse)
@@ -315,40 +317,44 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
     let depositTxResponse: TransactionResponse;
 
     when('contract is not approved to move funds', () => {
+      given(async () => {
+        await lp.mint(owner.address, fundsToMove);
+        depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.depositLiquidityTo(
+          alice.address,
+          lp.address,
+          fundsToMove
+        );
+      });
       then('tx is reverted with reason', async () => {
-        expect(
-          keep3rLiquidityManagerUserLiquidityHandler.depositLiquidityTo(
-            alice.address,
-            lp.address,
-            fundsToMove
-          )
-        ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+        await expect(depositTxResponse).to.be.revertedWith(
+          'ERC20: transfer amount exceeds allowance'
+        );
       });
     });
     when(
       'contract is not approved to move same amount of deposited funds',
       () => {
         given(async () => {
+          await lp.mint(owner.address, fundsToMove);
           await lp.approve(
             keep3rLiquidityManagerUserLiquidityHandler.address,
             fundsToMove.sub(1)
           );
+          depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.depositLiquidityTo(
+            alice.address,
+            lp.address,
+            fundsToMove
+          );
         });
         then('tx is reverted with reason', async () => {
-          expect(
-            keep3rLiquidityManagerUserLiquidityHandler.depositLiquidityTo(
-              alice.address,
-              lp.address,
-              fundsToMove
-            )
-          ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+          await expect(depositTxResponse).to.be.revertedWith(
+            'ERC20: transfer amount exceeds allowance'
+          );
         });
       }
     );
     when('contract is approved to move funds', () => {
-      let initialDepositorBalance: BigNumber;
       given(async () => {
-        initialDepositorBalance = await lp.balanceOf(owner.address);
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
@@ -366,6 +372,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             lp.address
           )
         ).to.equal(0);
+        await lp.mint(owner.address, fundsToMove);
         await lp.approve(
           keep3rLiquidityManagerUserLiquidityHandler.address,
           fundsToMove
@@ -378,9 +385,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
       });
 
       then('depositor funds are moved', async () => {
-        expect(await lp.balanceOf(owner.address)).to.equal(
-          initialDepositorBalance.sub(fundsToMove)
-        );
+        expect(await lp.balanceOf(owner.address)).to.equal(0);
       });
       then('event is emitted', async () => {
         await expect(depositTxResponse)
@@ -416,43 +421,47 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
     });
   });
 
-  describe('depositLiquidity', () => {
+  describe('depositLiquidityTo', () => {
     const fundsToMove = BigNumber.from('1000');
     let depositTxResponse: TransactionResponse;
 
     when('contract is not approved to move funds', () => {
+      given(async () => {
+        await lp.mint(owner.address, fundsToMove);
+        depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.depositLiquidity(
+          lp.address,
+          fundsToMove
+        );
+      });
       then('tx is reverted with reason', async () => {
-        expect(
-          keep3rLiquidityManagerUserLiquidityHandler.depositLiquidity(
-            lp.address,
-            fundsToMove
-          )
-        ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+        await expect(depositTxResponse).to.be.revertedWith(
+          'ERC20: transfer amount exceeds allowance'
+        );
       });
     });
     when(
       'contract is not approved to move same amount of deposited funds',
       () => {
         given(async () => {
+          await lp.mint(owner.address, fundsToMove);
           await lp.approve(
             keep3rLiquidityManagerUserLiquidityHandler.address,
             fundsToMove.sub(1)
           );
+          depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.depositLiquidity(
+            lp.address,
+            fundsToMove
+          );
         });
         then('tx is reverted with reason', async () => {
-          expect(
-            keep3rLiquidityManagerUserLiquidityHandler.depositLiquidity(
-              lp.address,
-              fundsToMove
-            )
-          ).to.be.revertedWith('ERC20: transfer amount exceeds allowance');
+          await expect(depositTxResponse).to.be.revertedWith(
+            'ERC20: transfer amount exceeds allowance'
+          );
         });
       }
     );
     when('contract is approved to move funds', () => {
-      let initialDepositorBalance: BigNumber;
       given(async () => {
-        initialDepositorBalance = await lp.balanceOf(owner.address);
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
@@ -470,6 +479,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             lp.address
           )
         ).to.equal(0);
+        await lp.mint(owner.address, fundsToMove);
         await lp.approve(
           keep3rLiquidityManagerUserLiquidityHandler.address,
           fundsToMove
@@ -481,9 +491,7 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
       });
 
       then('depositor funds are moved', async () => {
-        expect(await lp.balanceOf(owner.address)).to.equal(
-          initialDepositorBalance.sub(fundsToMove)
-        );
+        expect(await lp.balanceOf(owner.address)).to.equal(0);
       });
       then('event is emitted', async () => {
         await expect(depositTxResponse)
@@ -515,6 +523,280 @@ describe.only('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             lp.address
           )
         ).to.equal(fundsToMove);
+      });
+    });
+  });
+
+  describe('_withdrawLiquidity', () => {
+    when('withdrawer does not have idle amount', () => {
+      let withdrawTx: TransactionResponse;
+      given(async () => {
+        const funded = utils.parseEther('150');
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityTotalAmount(
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityTotalAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          lp.address,
+          funded.sub(1)
+        );
+        withdrawTx = keep3rLiquidityManagerUserLiquidityHandler.internalWithdrawLiquidity(
+          owner.address,
+          alice.address,
+          lp.address,
+          funded
+        );
+      });
+      then('tx is reverted with reason', async () => {
+        await expect(withdrawTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::user-insufficient-idle-balance'
+        );
+      });
+    });
+    when('withdrawer has enough idle amount', () => {
+      let withdrawTx: TransactionResponse;
+      const funded = utils.parseEther('150');
+      const withdrawn = utils.parseEther('23');
+      given(async () => {
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityTotalAmount(
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityTotalAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await lp.mint(
+          keep3rLiquidityManagerUserLiquidityHandler.address,
+          funded
+        );
+        withdrawTx = await keep3rLiquidityManagerUserLiquidityHandler.internalWithdrawLiquidity(
+          owner.address,
+          alice.address,
+          lp.address,
+          withdrawn
+        );
+      });
+      then('lp tokens are transferred to recipient', async () => {
+        expect(await lp.balanceOf(alice.address)).to.equal(withdrawn);
+        expect(
+          await lp.balanceOf(keep3rLiquidityManagerUserLiquidityHandler.address)
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total withdrawer liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total withdrawer idle liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+    });
+  });
+  describe('withdrawLiquidityTo', () => {
+    when('withdrawer does not have idle amount', () => {
+      let withdrawTx: TransactionResponse;
+      given(async () => {
+        const funded = utils.parseEther('150');
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityTotalAmount(
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityTotalAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          lp.address,
+          funded.sub(1)
+        );
+        withdrawTx = keep3rLiquidityManagerUserLiquidityHandler.withdrawLiquidityTo(
+          alice.address,
+          lp.address,
+          funded
+        );
+      });
+      then('tx is reverted with reason', async () => {
+        await expect(withdrawTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::user-insufficient-idle-balance'
+        );
+      });
+    });
+    when('withdrawer has enough idle amount', () => {
+      let withdrawTx: TransactionResponse;
+      const funded = utils.parseEther('150');
+      const withdrawn = utils.parseEther('23');
+      given(async () => {
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityTotalAmount(
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityTotalAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await lp.mint(
+          keep3rLiquidityManagerUserLiquidityHandler.address,
+          funded
+        );
+        withdrawTx = await keep3rLiquidityManagerUserLiquidityHandler.withdrawLiquidityTo(
+          alice.address,
+          lp.address,
+          withdrawn
+        );
+      });
+      then('lp tokens are transferred to recipient', async () => {
+        expect(await lp.balanceOf(alice.address)).to.equal(withdrawn);
+        expect(
+          await lp.balanceOf(keep3rLiquidityManagerUserLiquidityHandler.address)
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total withdrawer liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total withdrawer idle liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+    });
+  });
+  describe('withdrawLiquidity', () => {
+    when('withdrawer does not have idle amount', () => {
+      let withdrawTx: TransactionResponse;
+      given(async () => {
+        const funded = utils.parseEther('150');
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityTotalAmount(
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityTotalAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          lp.address,
+          funded.sub(1)
+        );
+        withdrawTx = keep3rLiquidityManagerUserLiquidityHandler.withdrawLiquidity(
+          lp.address,
+          funded
+        );
+      });
+      then('tx is reverted with reason', async () => {
+        await expect(withdrawTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::user-insufficient-idle-balance'
+        );
+      });
+    });
+    when('withdrawer has enough idle amount', () => {
+      let withdrawTx: TransactionResponse;
+      const funded = utils.parseEther('150');
+      const withdrawn = utils.parseEther('23');
+      given(async () => {
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityTotalAmount(
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityTotalAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          lp.address,
+          funded
+        );
+        await lp.mint(
+          keep3rLiquidityManagerUserLiquidityHandler.address,
+          funded
+        );
+        withdrawTx = await keep3rLiquidityManagerUserLiquidityHandler.withdrawLiquidity(
+          lp.address,
+          withdrawn
+        );
+      });
+      then('lp tokens are transferred to recipient', async () => {
+        expect(await lp.balanceOf(owner.address)).to.equal(withdrawn);
+        expect(
+          await lp.balanceOf(keep3rLiquidityManagerUserLiquidityHandler.address)
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total withdrawer liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
+      });
+      then('total withdrawer idle liquidity amount decreases', async () => {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(funded.sub(withdrawn));
       });
     });
   });
