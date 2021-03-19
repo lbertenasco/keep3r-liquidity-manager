@@ -54,10 +54,6 @@ contract Keep3rLiquidityManagerEscrowsHandlerMock is Keep3rLiquidityManagerEscro
     IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
   }
 
-  function returnLPsToGovernance(address _escrow) public override {
-    IKeep3rEscrow(_escrow).returnLPsToGovernance();
-  }
-
   function setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) public override {
     IKeep3rEscrow(_escrow).setPendingGovernor(_pendingGovernor);
   }

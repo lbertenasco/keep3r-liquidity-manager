@@ -5,7 +5,6 @@ pragma solidity 0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
-import './Keep3rLiquidityManagerEscrowsHandler.sol';
 import './Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerWork {
@@ -25,11 +24,7 @@ interface IKeep3rLiquidityManagerWork {
   function forceWork(address _job) external;
 }
 
-abstract contract Keep3rLiquidityManagerWork is
-  Keep3rLiquidityManagerEscrowsHandler,
-  Keep3rLiquidityManagerUserJobsLiquidityHandler,
-  IKeep3rLiquidityManagerWork
-{
+abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLiquidityHandler, IKeep3rLiquidityManagerWork {
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
     require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');

@@ -5,6 +5,7 @@ pragma solidity 0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import './Keep3rLiquidityManagerEscrowsHandler.sol';
 import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
 import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
 
@@ -39,6 +40,7 @@ interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
 }
 
 abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
+  Keep3rLiquidityManagerEscrowsHandler,
   Keep3rLiquidityManagerUserLiquidityHandler,
   Keep3rLiquidityManagerJobsLiquidityHandler,
   IKeep3rLiquidityManagerUserJobsLiquidityHandler
@@ -90,9 +92,12 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     userJobLiquidityLockedAmount[_user][_job][_lp] = userJobLiquidityLockedAmount[_user][_job][_lp].sub(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].add(_amount);
 
-    uint256 _jobLiquidityAmount = 0; // TODO Get job liquidity amount from keep3rV1
+    // withdraw tokens from escrows
+    IKeep3rEscrow(escrow1).withdraw(_lp, _amount.div(2));
+    IKeep3rEscrow(escrow2).withdraw(_lp, _amount.div(2));
 
-    if (_jobLiquidityAmount == 0) _removeLPFromJob(_lp, _job);
+    uint256 _liquidityInUse = IKeep3rEscrow(escrow1).liquidityTotalAmount(_lp).add(IKeep3rEscrow(escrow2).liquidityTotalAmount(_lp));
+    if (_liquidityInUse == 0) _removeLPFromJob(_lp, _job);
   }
 
   function _addLiquidityOfUserToJob(
@@ -113,6 +118,13 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     if (jobLiquidityDesiredAmount[_job][_lp] == 0) _addLPToJob(_lp, _job);
     // add amount to desired liquidity on job
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].add(_amount);
+
+    // deposit tokens to escrows
+    uint256 _escrowAmount = _amount.div(2);
+    IERC20(_lp).approve(escrow1, _escrowAmount);
+    IKeep3rEscrow(escrow1).deposit(_lp, _escrowAmount);
+    IERC20(_lp).approve(escrow2, _escrowAmount);
+    IKeep3rEscrow(escrow2).deposit(_lp, _escrowAmount);
   }
 
   function _reduceLiquidityOfUserFromJob(

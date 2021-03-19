@@ -4,19 +4,18 @@ pragma solidity 0.6.12;
 
 import './Keep3rEscrowParameters.sol';
 import './Keep3rEscrowLiquidityHandler.sol';
-
-interface IKeep3rEscrow is IKeep3rEscrowParameters, IKeep3rEscrowLiquidityHandler {}
+import './IKeep3rEscrow.sol';
 
 contract Keep3rEscrow is Keep3rEscrowParameters, Keep3rEscrowLiquidityHandler, IKeep3rEscrow {
   constructor(address _keep3r) public Keep3rEscrowParameters(_keep3r) {}
 
   // Manager Liquidity Handler
-  function transferLiquidityFromGovernor(address _liquidity, uint256 _amount) external override onlyGovernor {
-    _transferLiquidityFromGovernor(_liquidity, _amount);
+  function deposit(address _liquidity, uint256 _amount) external override onlyGovernor {
+    _deposit(_liquidity, _amount);
   }
 
-  function approveLiquidityToGovernor(address _liquidity, uint256 _amount) external override onlyGovernor {
-    _approveLiquidityToGovernor(_liquidity, _amount);
+  function withdraw(address _liquidity, uint256 _amount) external override onlyGovernor {
+    _withdraw(_liquidity, _amount);
   }
 
   // Job Liquidity Handler

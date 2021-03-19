@@ -11,12 +11,12 @@ contract Keep3rEscrowLiquidityHandlerMock is Keep3rEscrowLiquidityHandler, Keep3
         address _keep3r
     ) public Keep3rEscrowParametersMock(_keep3r) { }
 
-    function transferLiquidityFromGovernor(address _liquidity, uint256 _amount) external override {
-        _transferLiquidityFromGovernor(_liquidity, _amount);
+    function deposit(address _liquidity, uint256 _amount) external override {
+        _deposit(_liquidity, _amount);
     }
 
-    function approveLiquidityToGovernor(address _liquidity, uint256 _amount) external override {
-        _approveLiquidityToGovernor(_liquidity, _amount);
+    function withdraw(address _liquidity, uint256 _amount) external override {
+        _withdraw(_liquidity, _amount);
     }
 
     function addLiquidityToJob(

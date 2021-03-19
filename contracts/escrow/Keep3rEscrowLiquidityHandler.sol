@@ -15,16 +15,17 @@ abstract contract Keep3rEscrowLiquidityHandler is Keep3rEscrowParameters, IKeep3
   using SafeERC20 for IERC20;
 
   mapping(address => uint256) public override liquidityTotalAmount;
+  mapping(address => uint256) public override liquidityProvidedAmount;
 
   // Handler Liquidity Handler
-  function _transferLiquidityFromGovernor(address _liquidity, uint256 _amount) internal {
+  function _deposit(address _liquidity, uint256 _amount) internal {
     liquidityTotalAmount[_liquidity] = liquidityTotalAmount[_liquidity].add(_amount);
     IERC20(_liquidity).safeTransferFrom(governor, address(this), _amount);
   }
 
-  function _approveLiquidityToGovernor(address _liquidity, uint256 _amount) internal {
+  function _withdraw(address _liquidity, uint256 _amount) internal {
     liquidityTotalAmount[_liquidity] = liquidityTotalAmount[_liquidity].sub(_amount);
-    IERC20(_liquidity).safeApprove(governor, _amount);
+    IERC20(_liquidity).safeTransfer(governor, _amount);
   }
 
   // Job Liquidity Handler
@@ -36,6 +37,7 @@ abstract contract Keep3rEscrowLiquidityHandler is Keep3rEscrowParameters, IKeep3
     // Set infinite approval once per liquidity?
     IERC20(_liquidity).approve(keep3r, _amount);
     IKeep3rV1(keep3r).addLiquidityToJob(_liquidity, _job, _amount);
+    liquidityProvidedAmount[_liquidity] = liquidityProvidedAmount[_liquidity].add(_amount);
   }
 
   function _applyCreditToJob(
@@ -56,6 +58,23 @@ abstract contract Keep3rEscrowLiquidityHandler is Keep3rEscrowParameters, IKeep3
   }
 
   function _removeLiquidityFromJob(address _liquidity, address _job) internal {
+    uint256 _before = IERC20(_liquidity).balanceOf(address(this));
     IKeep3rV1(keep3r).removeLiquidityFromJob(_liquidity, _job);
+    uint256 _amount = IERC20(_liquidity).balanceOf(address(this)).sub(_before);
+    liquidityProvidedAmount[_liquidity] = liquidityProvidedAmount[_liquidity].sub(_amount);
+  }
+
+  // Collectable Dust
+  function _safeSendDust(
+    address _to,
+    address _token,
+    uint256 _amount
+  ) internal {
+    if (liquidityTotalAmount[_token] > 0) {
+      uint256 _balance = IERC20(_token).balanceOf(address(this));
+      uint256 _provided = liquidityProvidedAmount[_token];
+      require(_amount <= _balance.add(_provided).sub(liquidityTotalAmount[_token]));
+    }
+    _sendDust(_to, _token, _amount);
   }
 }

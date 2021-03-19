@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.12;
 
-import '../interfaces/IKeep3rEscrow.sol';
+import '../escrow/IKeep3rEscrow.sol';
 
 interface IKeep3rLiquidityManagerEscrowsHandler {
   event Escrow1Set(address _escrow1);
@@ -14,8 +14,6 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
   function escrow2() external view returns (address _escrow2);
 
   function isValidEscrow(address _escrow) external view returns (bool);
-
-  function returnLPsToGovernance(address _escrow) external;
 
   function addLiquidityToJob(
     address _escrow,

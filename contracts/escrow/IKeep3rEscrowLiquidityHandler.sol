@@ -10,6 +10,12 @@ interface IKeep3rEscrowLiquidityHandler {
 
   function liquidityTotalAmount(address _liquidity) external returns (uint256 _amount);
 
+  function liquidityProvidedAmount(address _liquidity) external returns (uint256 _amount);
+
+  function deposit(address _liquidity, uint256 _amount) external;
+
+  function withdraw(address _liquidity, uint256 _amount) external;
+
   function addLiquidityToJob(
     address _liquidity,
     address _job,
@@ -29,8 +35,4 @@ interface IKeep3rEscrowLiquidityHandler {
   ) external;
 
   function removeLiquidityFromJob(address _liquidity, address _job) external;
-
-  function transferLiquidityFromGovernor(address _liquidity, uint256 _amount) external;
-
-  function approveLiquidityToGovernor(address _liquidity, uint256 _amount) external;
 }
