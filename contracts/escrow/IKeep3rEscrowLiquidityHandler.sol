@@ -34,5 +34,5 @@ interface IKeep3rEscrowLiquidityHandler {
     uint256 _amount
   ) external;
 
-  function removeLiquidityFromJob(address _liquidity, address _job) external;
+  function removeLiquidityFromJob(address _liquidity, address _job) external returns (uint256 _amount);
 }

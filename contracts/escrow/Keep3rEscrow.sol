@@ -43,8 +43,8 @@ contract Keep3rEscrow is Keep3rEscrowParameters, Keep3rEscrowLiquidityHandler, I
     _unbondLiquidityFromJob(_liquidity, _job, _amount);
   }
 
-  function removeLiquidityFromJob(address _liquidity, address _job) external override onlyGovernor {
-    _removeLiquidityFromJob(_liquidity, _job);
+  function removeLiquidityFromJob(address _liquidity, address _job) external override onlyGovernor returns (uint256 _amount) {
+    return _removeLiquidityFromJob(_liquidity, _job);
   }
 
   function sendDust(

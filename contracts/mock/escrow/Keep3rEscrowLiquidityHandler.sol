@@ -35,8 +35,8 @@ contract Keep3rEscrowLiquidityHandlerMock is Keep3rEscrowLiquidityHandler, Keep3
         _applyCreditToJob(_provider, _liquidity, _job);
     }
 
-    function removeLiquidityFromJob(address _liquidity, address _job) public override {
-        _removeLiquidityFromJob(_liquidity, _job);
+    function removeLiquidityFromJob(address _liquidity, address _job) public override returns (uint256 _amount) {
+        return _removeLiquidityFromJob(_liquidity, _job);
     }
 
     function unbondLiquidityFromJob(

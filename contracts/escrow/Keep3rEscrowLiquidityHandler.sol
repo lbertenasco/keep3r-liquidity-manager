@@ -57,10 +57,10 @@ abstract contract Keep3rEscrowLiquidityHandler is Keep3rEscrowParameters, IKeep3
     IKeep3rV1(keep3r).unbondLiquidityFromJob(_liquidity, _job, _amount);
   }
 
-  function _removeLiquidityFromJob(address _liquidity, address _job) internal {
+  function _removeLiquidityFromJob(address _liquidity, address _job) internal returns (uint256 _amount) {
     uint256 _before = IERC20(_liquidity).balanceOf(address(this));
     IKeep3rV1(keep3r).removeLiquidityFromJob(_liquidity, _job);
-    uint256 _amount = IERC20(_liquidity).balanceOf(address(this)).sub(_before);
+    _amount = IERC20(_liquidity).balanceOf(address(this)).sub(_before);
     liquidityProvidedAmount[_liquidity] = liquidityProvidedAmount[_liquidity].sub(_amount);
   }
 

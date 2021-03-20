@@ -42,7 +42,7 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
     address _escrow,
     address _liquidity,
     address _job
-  ) external;
+  ) external returns (uint256 _amount);
 
   function setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) external;
 
@@ -116,8 +116,8 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
     address _escrow,
     address _liquidity,
     address _job
-  ) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
+  ) internal _assertIsValidEscrow(_escrow) returns (uint256 _amount) {
+    return IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
   }
 
   function _setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) internal _assertIsValidEscrow(_escrow) {
