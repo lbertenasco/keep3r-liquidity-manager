@@ -3,8 +3,6 @@
 pragma solidity 0.6.12;
 
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
 interface IKeep3rLiquidityManagerJobsLiquidityHandler {
   function jobLiquidities(address _job, uint256 _index) external view returns (address _liquidity);
@@ -18,11 +16,14 @@ interface IKeep3rLiquidityManagerJobsLiquidityHandler {
     address _liquidity,
     address _escrow
   ) external view returns (uint256 _amount);
+
+  function getJobLiquidities(address _job) external view returns (address[] memory);
+
+  function jobHasLiquitidy(address _job, address _liquidity) external view returns (bool);
 }
 
 abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidityManagerJobsLiquidityHandler {
   using SafeMath for uint256;
-  using SafeERC20 for IERC20;
 
   // job => lp[]
   mapping(address => address[]) public override jobLiquidities;
@@ -33,19 +34,31 @@ abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidity
   // job => lp => escrow => amount
   mapping(address => mapping(address => mapping(address => uint256))) public override jobLiquidityEscrowAmount;
 
-  function _addLPToJob(address _lp, address _job) internal {
-    jobLiquidities[_job].push(_lp);
-    jobLiquidityIndex[_job][_lp] = jobLiquidities[_job].length;
+  function getJobLiquidities(address _job) public view override returns (address[] memory) {
+    return jobLiquidities[_job];
   }
 
-  function _removeLPFromJob(address _lp, address _job) internal {
-    uint256 _index = jobLiquidityIndex[_job][_lp];
+  function jobHasLiquitidy(address _job, address _liquidity) public view override returns (bool) {
+    return
+      jobLiquidityIndex[_job][_liquidity] != 0 ||
+      (jobLiquidityIndex[_job][_liquidity] == 0 && jobLiquidities[_job].length > 0 && jobLiquidities[_job][0] == _liquidity);
+  }
+
+  function _addLPToJob(address _job, address _liquidity) internal {
+    if (jobHasLiquitidy(_job, _liquidity)) return;
+    jobLiquidities[_job].push(_liquidity);
+    jobLiquidityIndex[_job][_liquidity] = jobLiquidities[_job].length.sub(1);
+  }
+
+  function _removeLPFromJob(address _job, address _liquidity) internal {
+    if (!jobHasLiquitidy(_job, _liquidity)) return;
+    uint256 _index = jobLiquidityIndex[_job][_liquidity];
     uint256 _lastIndex = jobLiquidities[_job].length.sub(1);
     if (_index < _lastIndex) {
       jobLiquidities[_job][_index] = jobLiquidities[_job][_lastIndex];
       jobLiquidityIndex[_job][jobLiquidities[_job][_index]] = _index;
     }
-    delete jobLiquidityIndex[_job][_lp];
+    delete jobLiquidityIndex[_job][_liquidity];
     jobLiquidities[_job].pop();
   }
 }

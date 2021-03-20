@@ -30,13 +30,13 @@ interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
     address _job,
     address _lp,
     uint256 _amount
-  ) external returns (bool);
+  ) external;
 
   function removeIdleLiquidityFromJob(
     address _job,
     address _lp,
     uint256 _amount
-  ) external returns (bool);
+  ) external;
 }
 
 abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
@@ -58,12 +58,28 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
 
   constructor() public {}
 
+  function setJobLiquidityAmount(
+    address _job,
+    address _lp,
+    uint256 _amount
+  ) external virtual override {
+    _setLiquidityToJobOfUser(msg.sender, _job, _lp, _amount);
+  }
+
+  function removeIdleLiquidityFromJob(
+    address _job,
+    address _lp,
+    uint256 _amount
+  ) external virtual override {
+    _removeIdleLiquidityOfUserFromJob(msg.sender, _job, _lp, _amount);
+  }
+
   function _setLiquidityToJobOfUser(
     address _user,
     address _job,
     address _lp,
     uint256 _amount
-  ) internal returns (bool) {
+  ) internal {
     _amount = _amount.div(2).mul(2); // removes potential decimal dust
 
     require(_amount != userJobLiquidityAmount[_user][_job][_lp], 'Keep3rLiquidityManager::same-liquidity-amount');
@@ -82,7 +98,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _job,
     address _lp,
     uint256 _amount
-  ) external returns (bool) {
+  ) internal {
     _amount = _amount.div(2).mul(2); // removes potential decimal dust
     require(jobCycle[_job] >= userJobCycle[_user][_job].add(2), 'Keep3rLiquidityManager::liquidity-still-locked');
 
