@@ -10,11 +10,9 @@ import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerUserLiquidityHandle
 import './Keep3rLiquidityManagerParameters.sol';
 
 
-contract Keep3rLiquidityManagerUserLiquidityHandlerMock is 
-  Keep3rLiquidityManagerUserLiquidityHandler, 
-  Keep3rLiquidityManagerParametersMock {
+contract Keep3rLiquidityManagerUserLiquidityHandlerMock is Keep3rLiquidityManagerUserLiquidityHandler{
 
-  constructor(address _keep3rV1) public Keep3rLiquidityManagerParametersMock(_keep3rV1) { }
+  constructor(address _keep3rV1) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) { }
 
   function internalDepositLiquidity(
     address _liquidityDepositor,

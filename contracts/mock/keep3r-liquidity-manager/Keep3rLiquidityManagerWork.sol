@@ -7,12 +7,16 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import './Keep3rLiquidityManagerParameters.sol';
 import './Keep3rLiquidityManagerEscrowsHandler.sol';
 import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
+import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerWork.sol';
 
-contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityManagerUserJobsLiquidityHandler {
+contract Keep3rLiquidityManagerWorkMock is Keep3rLiquidityManagerWork {
   using SafeMath for uint256;
   
-  constructor(address _keep3rV1, address _escrow1, address _escrow2) public
-    Keep3rLiquidityManagerUserJobsLiquidityHandler(_keep3rV1, _escrow1, _escrow2) { }
+  constructor(
+    address _keep3rV1,
+    address _escrow1,
+    address _escrow2
+  ) public Keep3rLiquidityManagerWork(_keep3rV1, _escrow1, _escrow2) {}
 
   function setLiquidityToJobOfUser(
     address _user,
@@ -50,6 +54,21 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
     _reduceLiquidityOfUserFromJob(_user, _job, _lp, _amount);
   }
 
+  // Keep3rLiquidityManagerWork
+  function work(address _job) external override {
+    (address _escrow, Actions _action) = getNextAction(_job);
+    require(_workable(_action), 'Keep3rLiquidityManager::work:not-workable');
+
+    _work(_escrow, _action, _job);
+
+    emit Worked(_job);
+  }
+
+  function forceWork(address _job) external override {
+    (address _escrow, Actions _action) = getNextAction(_job);
+    _work(_escrow, _action, _job);
+    emit ForceWorked(_job);
+  }
 
 
   // Escrow Liquidity
@@ -104,4 +123,5 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
   ) external override {
     _sendDustOnEscrow(_escrow, _to, _token, _amount);
   }
+
 }

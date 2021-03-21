@@ -56,7 +56,11 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
   // job => cycle
   mapping(address => uint256) public override jobCycle;
 
-  constructor() public {}
+  constructor(
+    address _keep3rV1,
+    address _escrow1,
+    address _escrow2
+  ) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
 
   function setJobLiquidityAmount(
     address _job,

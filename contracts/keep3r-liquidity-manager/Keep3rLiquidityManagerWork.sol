@@ -29,17 +29,20 @@ interface IKeep3rLiquidityManagerWork {
   function forceWork(address _job) external;
 }
 
-// IMPORTANT!
-// TODO SIMPLIFY WITH STEPS AND COOLDOWNS!
 abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLiquidityHandler, IKeep3rLiquidityManagerWork {
   // job => escrow => Steps
   mapping(address => mapping(address => Steps)) public override jobEscrowStep;
   // job => escrow => timestamp
   mapping(address => mapping(address => uint256)) public override jobEscrowTimestamp;
 
+  constructor(
+    address _keep3rV1,
+    address _escrow1,
+    address _escrow2
+  ) public Keep3rLiquidityManagerUserJobsLiquidityHandler(_keep3rV1, _escrow1, _escrow2) {}
+
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
-    // TODO Not sure this requirement is ok....
     require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
 
     Steps _escrow1Step = jobEscrowStep[_job][escrow1];
@@ -129,8 +132,6 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
     return Actions.None;
   }
 
-  // TODO IMPORTANT add steps and timestamps on actions
-  // Keep3r actions
   function workable(address _job) public view override returns (bool) {
     (, Actions _action) = getNextAction(_job);
     return _workable(_action);
@@ -150,7 +151,6 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
         address _liquidity = jobLiquidities[_job][i];
         uint256 _escrowAmount = jobLiquidityDesiredAmount[_job][_liquidity].div(2);
-        // TODO Check if deposit amount should be 100% here or we need to check if there is some already on escrow
         IERC20(_liquidity).approve(_escrow, _escrowAmount);
         IKeep3rEscrow(_escrow).deposit(_liquidity, _escrowAmount);
         _addLiquidityToJob(_escrow, _liquidity, _job, _escrowAmount);
@@ -164,23 +164,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
         address _liquidity = jobLiquidities[_job][i];
         uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_otherEscrow, _liquidity, _job);
-        // check not needed in this job
-        // uint256 _liquidityAmount = IKeep3rV1(keep3rV1).liquidityAmount(_otherEscrow, _liquidity, _job);
-        // if (_liquidityProvided > 0 && _liquidityAmount == 0) {
         if (_liquidityProvided > 0) {
           _unbondLiquidityFromJob(_otherEscrow, _liquidity, _job, _liquidityProvided);
-        } else {
-          // TODO IMPORTANT ! Almost sure we need to Remove this
-          // //  - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
-          // uint256 _liquidityAmountsUnbonding = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
-          // uint256 _liquidityUnbonding = IKeep3rV1(keep3rV1).liquidityUnbonding(_otherEscrow, _liquidity, _job);
-          // if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
-          //   uint256 _amount = _removeLiquidityFromJob(_otherEscrow, _liquidity, _job);
-          //   _addLiquidityToJob(_otherEscrow, _liquidity, _job, jobLiquidityDesiredAmount[_job][_liquidity].div(2));
-          //   if (_amount > jobLiquidityDesiredAmount[_job][_liquidity].div(2)) {
-          //     IKeep3rEscrow(_otherEscrow).withdraw(_liquidity, _amount.sub(jobLiquidityDesiredAmount[_job][_liquidity].div(2)));
-          //   }
-          // }
         }
       }
       // Run applyCreditToJob
