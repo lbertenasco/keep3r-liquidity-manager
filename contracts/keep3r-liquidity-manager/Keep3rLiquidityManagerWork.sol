@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import './Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerWork {
-  enum Actions { None, AddLiquidityToJob, ApplyCreditToJob, RemoveLiquidityFromJob }
+  enum Actions { None, AddLiquidityToJob, ApplyCreditToJob, UnbondLiquidityFromJob, RemoveLiquidityFromJob }
   enum Steps { NotStarted, LiquidityAdded, CreditApplied, UnbondingLiquidity }
 
   // Actions by Keeper
@@ -41,61 +41,92 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
     // TODO Not sure this requirement is ok....
     require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
-    address _liquidity = jobLiquidities[_job][0];
 
     Steps _escrow1Step = jobEscrowStep[_job][escrow1];
     Steps _escrow2Step = jobEscrowStep[_job][escrow2];
 
-    // Init
+    // Init (add liquidity to escrow1)
     if (_escrow1Step == Steps.NotStarted && _escrow2Step == Steps.NotStarted) {
-      // ADD LIQUIDITY TO escrow1
       return (escrow1, Actions.AddLiquidityToJob);
     }
 
+    // Init (add liquidity to NotStarted escrow)
+    if ((_escrow1Step == Steps.NotStarted || _escrow2Step == Steps.NotStarted) && _jobHasDesiredLiquidity(_job)) {
+      _escrow = _escrow1Step == Steps.NotStarted ? escrow1 : escrow2;
+      address _otherEscrow = _escrow == escrow1 ? escrow2 : escrow1;
+
+      // on _otherEscrow step CreditApplied
+      if (jobEscrowStep[_job][_otherEscrow] == Steps.CreditApplied) {
+        // make sure to wait 14 days
+        if (block.timestamp > jobEscrowTimestamp[_job][_otherEscrow].add(14 days)) {
+          // add liquidity to NotStarted _escrow
+          return (_escrow, Actions.AddLiquidityToJob);
+        }
+      }
+
+      // on _otherEscrow step UnbondingLiquidity add liquidity
+      if (jobEscrowStep[_job][_otherEscrow] == Steps.UnbondingLiquidity) {
+        // add liquidity to NotStarted _escrow
+        return (_escrow, Actions.AddLiquidityToJob);
+      }
+    }
+
     // can return None, ApplyCreditToJob and RemoveLiquidityFromJob.
-    (_escrow, _action) = _getNextActionOnStep(escrow1, _liquidity, _job);
-    if (_action != Actions.None) return (_escrow, _action);
+    _action = _getNextActionOnStep(escrow1, _escrow1Step, _escrow2Step, _job);
+    if (_action != Actions.None) return (escrow1, _action);
 
     // if escrow1 next actions is None we need to check escrow2
 
-    // if escrow2 has not yet started
-    if (_escrow2Step == Steps.NotStarted) {
-      // expect escrow1 CreditApplied
-      if (_escrow1Step != Steps.CreditApplied) return (address(0), Actions.None);
-      // make sure to wait 14 days
-      if (block.timestamp <= jobEscrowTimestamp[_job][escrow1].add(14 days)) return (address(0), Actions.None);
-      // add liquidity as escrow2
-      return (escrow2, Actions.AddLiquidityToJob);
-    }
+    _action = _getNextActionOnStep(escrow2, _escrow2Step, _escrow1Step, _job);
+    if (_action != Actions.None) return (escrow2, _action);
 
-    (_escrow, _action) = _getNextActionOnStep(escrow2, _liquidity, _job);
+    return (address(0), Actions.None);
+  }
+
+  function _jobHasDesiredLiquidity(address _job) internal view returns (bool) {
+    // search for desired liquidity > 0 on all job liquidities
+    for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+      if (jobLiquidityDesiredAmount[_job][jobLiquidities[_job][i]] > 0) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function _getNextActionOnStep(
     address _escrow,
-    address _liquidity,
+    Steps _escrowStep,
+    Steps _otherEscrowStep,
     address _job
-  ) internal view returns (address, Actions) {
-    Steps _escrowStep = jobEscrowStep[_job][_escrow];
-
+  ) internal view returns (Actions) {
+    // after adding liquidity wait 3 days to apply
     if (_escrowStep == Steps.LiquidityAdded) {
       // The escrow with liquidityAmount is the one to call applyCreditToJob, the other should call unbondLiquidityFromJob
-      if (IKeep3rV1(keep3rV1).liquidityApplied(_escrow, _liquidity, _job) < block.timestamp) {
-        return (_escrow, Actions.ApplyCreditToJob);
+      if (block.timestamp > jobEscrowTimestamp[_job][_escrow].add(3 days)) {
+        return Actions.ApplyCreditToJob;
       }
-      return (address(0), Actions.None);
+      return Actions.None;
     }
 
+    // after applying credits wait 17 days to unbond (only happens when other escrow is on NotStarted [desired liquidity = 0])
+    // makes sure otherEscrowStep is still notStarted (it can be liquidityAdded)
     if (_escrowStep == Steps.CreditApplied) {
-      // Check if we can _removeLiquidityFromJob & instantly _addLiquidityToJob
-      uint256 liquidityAmountsUnbonding1 = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_escrow, _liquidity, _job);
-      uint256 liquidityUnbonding1 = IKeep3rV1(keep3rV1).liquidityUnbonding(_escrow, _liquidity, _job);
-      if (liquidityAmountsUnbonding1 > 0 && liquidityUnbonding1 < block.timestamp) {
-        return (_escrow, Actions.RemoveLiquidityFromJob);
+      if (_otherEscrowStep == Steps.NotStarted && block.timestamp > jobEscrowTimestamp[_job][_escrow].add(17 days)) {
+        return Actions.UnbondLiquidityFromJob;
       }
+      return Actions.None;
     }
 
-    return (address(0), Actions.None);
+    // after unbonding liquidity wait 14 days to remove
+    if (_escrowStep == Steps.UnbondingLiquidity) {
+      if (block.timestamp > jobEscrowTimestamp[_job][_escrow].add(14 days)) {
+        return Actions.RemoveLiquidityFromJob;
+      }
+      return Actions.None;
+    }
+
+    // for steps: NotStarted. return Actions.None
+    return Actions.None;
   }
 
   // TODO IMPORTANT add steps and timestamps on actions

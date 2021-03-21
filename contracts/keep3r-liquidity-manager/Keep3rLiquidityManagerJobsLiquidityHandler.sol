@@ -41,6 +41,7 @@ abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidity
   function jobHasLiquitidy(address _job, address _liquidity) public view override returns (bool) {
     return
       jobLiquidityIndex[_job][_liquidity] != 0 ||
+      // TODO Rework?: This complex check can be avoided by using index as length.
       (jobLiquidityIndex[_job][_liquidity] == 0 && jobLiquidities[_job].length > 0 && jobLiquidities[_job][0] == _liquidity);
   }
 
