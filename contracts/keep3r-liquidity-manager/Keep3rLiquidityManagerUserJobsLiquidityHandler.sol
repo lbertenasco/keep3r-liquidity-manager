@@ -134,14 +134,6 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     if (jobLiquidityDesiredAmount[_job][_lp] == 0) _addLPToJob(_lp, _job); // TODO check if already added (can be added and desired)
     // add amount to desired liquidity on job
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].add(_amount);
-
-    // TODO IMPORTANT!
-    // // deposit tokens to escrows // TODO MOVE TO WORK
-    // uint256 _escrowAmount = _amount.div(2);
-    // IERC20(_lp).approve(escrow1, _escrowAmount);
-    // IKeep3rEscrow(escrow1).deposit(_lp, _escrowAmount);
-    // IERC20(_lp).approve(escrow2, _escrowAmount);
-    // IKeep3rEscrow(escrow2).deposit(_lp, _escrowAmount);
   }
 
   function _reduceLiquidityOfUserFromJob(

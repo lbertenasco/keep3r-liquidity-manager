@@ -145,35 +145,42 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
     Actions _action,
     address _job
   ) internal {
-    address _liquidity = jobLiquidities[_job][0];
-
     // AddLiquidityToJob
     if (_action == Actions.AddLiquidityToJob) {
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, jobLiquidityDesiredAmount[_job][_liquidity].div(2));
+        address _liquidity = jobLiquidities[_job][i];
+        uint256 _escrowAmount = jobLiquidityDesiredAmount[_job][_liquidity].div(2);
+        // TODO Check if deposit amount should be 100% here or we need to check if there is some already on escrow
+        IERC20(_liquidity).approve(_escrow, _escrowAmount);
+        IKeep3rEscrow(_escrow).deposit(_liquidity, _escrowAmount);
+        _addLiquidityToJob(_escrow, _liquidity, _job, _escrowAmount);
       }
 
       // ApplyCreditToJob (_unbondLiquidityFromJob, _removeLiquidityFromJob, _addLiquidityToJob)
     } else if (_action == Actions.ApplyCreditToJob) {
-      address _otherEscrow = _escrow == address(escrow1) ? address(escrow2) : address(escrow1);
+      address _otherEscrow = _escrow == escrow1 ? escrow2 : escrow1;
 
       // ALWAYS FIRST: Should try to unbondLiquidityFromJob from _otherEscrow
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+        address _liquidity = jobLiquidities[_job][i];
         uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_otherEscrow, _liquidity, _job);
-        uint256 _liquidityAmount = IKeep3rV1(keep3rV1).liquidityAmount(_otherEscrow, _liquidity, _job);
-        if (_liquidityProvided > 0 && _liquidityAmount == 0) {
-          _unbondLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job, _liquidityProvided);
+        // check not needed in this job
+        // uint256 _liquidityAmount = IKeep3rV1(keep3rV1).liquidityAmount(_otherEscrow, _liquidity, _job);
+        // if (_liquidityProvided > 0 && _liquidityAmount == 0) {
+        if (_liquidityProvided > 0) {
+          _unbondLiquidityFromJob(_otherEscrow, _liquidity, _job, _liquidityProvided);
         } else {
-          //  - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
-          uint256 _liquidityAmountsUnbonding = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
-          uint256 _liquidityUnbonding = IKeep3rV1(keep3rV1).liquidityUnbonding(_otherEscrow, _liquidity, _job);
-          if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
-            uint256 _amount = _removeLiquidityFromJob(_otherEscrow, jobLiquidities[_job][i], _job);
-            _addLiquidityToJob(_otherEscrow, jobLiquidities[_job][i], _job, jobLiquidityDesiredAmount[_job][_liquidity].div(2));
-            if (_amount > jobLiquidityDesiredAmount[_job][_liquidity].div(2)) {
-              IKeep3rEscrow(_otherEscrow).withdraw(jobLiquidities[_job][i], _amount.sub(jobLiquidityDesiredAmount[_job][_liquidity].div(2)));
-            }
-          }
+          // TODO IMPORTANT ! Almost sure we need to Remove this
+          // //  - if no liquidity to add and liquidityAmountsUnbonding then _removeLiquidityFromJob + _addLiquidityToJob
+          // uint256 _liquidityAmountsUnbonding = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_otherEscrow, _liquidity, _job);
+          // uint256 _liquidityUnbonding = IKeep3rV1(keep3rV1).liquidityUnbonding(_otherEscrow, _liquidity, _job);
+          // if (_liquidityAmountsUnbonding > 0 && _liquidityUnbonding < block.timestamp) {
+          //   uint256 _amount = _removeLiquidityFromJob(_otherEscrow, _liquidity, _job);
+          //   _addLiquidityToJob(_otherEscrow, _liquidity, _job, jobLiquidityDesiredAmount[_job][_liquidity].div(2));
+          //   if (_amount > jobLiquidityDesiredAmount[_job][_liquidity].div(2)) {
+          //     IKeep3rEscrow(_otherEscrow).withdraw(_liquidity, _amount.sub(jobLiquidityDesiredAmount[_job][_liquidity].div(2)));
+          //   }
+          // }
         }
       }
       // Run applyCreditToJob
@@ -181,24 +188,48 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         _applyCreditToJob(_escrow, jobLiquidities[_job][i], _job);
       }
 
+      // UnbondLiquidityFromJob
+    } else if (_action == Actions.UnbondLiquidityFromJob) {
+      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+        address _liquidity = jobLiquidities[_job][i];
+
+        uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_escrow, _liquidity, _job);
+        if (_liquidityProvided > 0) {
+          _unbondLiquidityFromJob(_escrow, _liquidity, _job, _liquidityProvided);
+        }
+      }
+
       // RemoveLiquidityFromJob
     } else if (_action == Actions.RemoveLiquidityFromJob) {
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        uint256 _amount = _removeLiquidityFromJob(_escrow, jobLiquidities[_job][i], _job);
-        _addLiquidityToJob(_escrow, jobLiquidities[_job][i], _job, jobLiquidityDesiredAmount[_job][_liquidity].div(2));
-        if (_amount > jobLiquidityDesiredAmount[_job][_liquidity].div(2)) {
-          IKeep3rEscrow(_escrow).withdraw(jobLiquidities[_job][i], _amount.sub(jobLiquidityDesiredAmount[_job][_liquidity].div(2)));
+        address _liquidity = jobLiquidities[_job][i];
+        // remove liquidity
+        uint256 _amount = _removeLiquidityFromJob(_escrow, _liquidity, _job);
+
+        uint256 _escrowAmount = jobLiquidityDesiredAmount[_job][_liquidity].div(2);
+
+        // check if a withdraw or deposit is needed
+        if (_amount > _escrowAmount) {
+          IKeep3rEscrow(_escrow).withdraw(_liquidity, _amount.sub(_escrowAmount));
+        } else if (_amount < _escrowAmount) {
+          IERC20(_liquidity).approve(_escrow, _escrowAmount.sub(_amount));
+          IKeep3rEscrow(_escrow).deposit(_liquidity, _escrowAmount.sub(_amount));
+        }
+
+        // add liquidity
+        if (_escrowAmount > 0) {
+          _addLiquidityToJob(_escrow, _liquidity, _job, _escrowAmount);
         }
       }
     }
 
     // Try to clean LP after execution
     for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
+      address _liquidity = jobLiquidities[_job][i];
+
       uint256 _liquidityInUse =
-        IKeep3rEscrow(escrow1).liquidityTotalAmount(jobLiquidities[_job][i]).add(
-          IKeep3rEscrow(escrow2).liquidityTotalAmount(jobLiquidities[_job][i])
-        );
-      if (_liquidityInUse == 0) _removeLPFromJob(jobLiquidities[_job][i], _job);
+        IKeep3rEscrow(escrow1).liquidityTotalAmount(_liquidity).add(IKeep3rEscrow(escrow2).liquidityTotalAmount(_liquidity));
+      if (_liquidityInUse == 0) _removeLPFromJob(_liquidity, _job);
     }
   }
 }
