@@ -9,6 +9,7 @@ import './Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerWork {
   enum Actions { None, AddLiquidityToJob, ApplyCreditToJob, RemoveLiquidityFromJob }
+  enum Steps { NotStarted, LiquidityAdded, CreditApplied, UnbondingLiquidity }
 
   // Actions by Keeper
   event Worked(address indexed _job);
@@ -19,6 +20,10 @@ interface IKeep3rLiquidityManagerWork {
 
   function workable(address _job) external view returns (bool);
 
+  function jobEscrowStep(address _job, address _escrow) external view returns (Steps _step);
+
+  function jobEscrowTimestamp(address _job, address _escrow) external view returns (uint256 _timestamp);
+
   function work(address _job) external;
 
   function forceWork(address _job) external;
@@ -27,53 +32,73 @@ interface IKeep3rLiquidityManagerWork {
 // IMPORTANT!
 // TODO SIMPLIFY WITH STEPS AND COOLDOWNS!
 abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLiquidityHandler, IKeep3rLiquidityManagerWork {
+  // job => escrow => Steps
+  mapping(address => mapping(address => Steps)) public override jobEscrowStep;
+  // job => escrow => timestamp
+  mapping(address => mapping(address => uint256)) public override jobEscrowTimestamp;
+
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
+    // TODO Not sure this requirement is ok....
     require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
     address _liquidity = jobLiquidities[_job][0];
 
-    uint256 liquidityProvided1 = IKeep3rV1(keep3rV1).liquidityProvided(address(escrow1), _liquidity, _job);
-    uint256 liquidityProvided2 = IKeep3rV1(keep3rV1).liquidityProvided(address(escrow2), _liquidity, _job);
-    if (liquidityProvided1 == 0 && liquidityProvided2 == 0) {
-      // Only start if both escrow have liquidity
-      require(IERC20(_liquidity).balanceOf(address(escrow1)) > 0, 'Keep3rLiquidityManager::getNextAction:escrow1-liquidity-is-0');
-      require(IERC20(_liquidity).balanceOf(address(escrow2)) > 0, 'Keep3rLiquidityManager::getNextAction:escrow2-liquidity-is-0');
+    Steps _escrow1Step = jobEscrowStep[_job][escrow1];
+    Steps _escrow2Step = jobEscrowStep[_job][escrow2];
 
-      // Start by _addLiquidityToJob liquidity with escrow1 as default
+    // Init
+    if (_escrow1Step == Steps.NotStarted && _escrow2Step == Steps.NotStarted) {
+      // ADD LIQUIDITY TO escrow1
       return (escrow1, Actions.AddLiquidityToJob);
     }
 
-    // The escrow with liquidityAmount is the one to call applyCreditToJob, the other should call unbondLiquidityFromJob
-    if (
-      IKeep3rV1(keep3rV1).liquidityAmount(address(escrow1), _liquidity, _job) > 0 &&
-      IKeep3rV1(keep3rV1).liquidityApplied(address(escrow1), _liquidity, _job) < block.timestamp
-    ) {
-      return (escrow1, Actions.ApplyCreditToJob);
+    // can return None, ApplyCreditToJob and RemoveLiquidityFromJob.
+    (_escrow, _action) = _getNextActionOnStep(escrow1, _liquidity, _job);
+    if (_action != Actions.None) return (_escrow, _action);
+
+    // if escrow1 next actions is None we need to check escrow2
+
+    // if escrow2 has not yet started
+    if (_escrow2Step == Steps.NotStarted) {
+      // expect escrow1 CreditApplied
+      if (_escrow1Step != Steps.CreditApplied) return (address(0), Actions.None);
+      // make sure to wait 14 days
+      if (block.timestamp <= jobEscrowTimestamp[_job][escrow1].add(14 days)) return (address(0), Actions.None);
+      // add liquidity as escrow2
+      return (escrow2, Actions.AddLiquidityToJob);
     }
 
-    if (
-      IKeep3rV1(keep3rV1).liquidityAmount(address(escrow2), _liquidity, _job) > 0 &&
-      IKeep3rV1(keep3rV1).liquidityApplied(address(escrow2), _liquidity, _job) < block.timestamp
-    ) {
-      return (escrow2, Actions.ApplyCreditToJob);
+    (_escrow, _action) = _getNextActionOnStep(escrow2, _liquidity, _job);
+  }
+
+  function _getNextActionOnStep(
+    address _escrow,
+    address _liquidity,
+    address _job
+  ) internal view returns (address, Actions) {
+    Steps _escrowStep = jobEscrowStep[_job][_escrow];
+
+    if (_escrowStep == Steps.LiquidityAdded) {
+      // The escrow with liquidityAmount is the one to call applyCreditToJob, the other should call unbondLiquidityFromJob
+      if (IKeep3rV1(keep3rV1).liquidityApplied(_escrow, _liquidity, _job) < block.timestamp) {
+        return (_escrow, Actions.ApplyCreditToJob);
+      }
+      return (address(0), Actions.None);
     }
 
-    // Check if we can _removeLiquidityFromJob & instantly _addLiquidityToJob
-    uint256 liquidityAmountsUnbonding1 = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(address(escrow1), _liquidity, _job);
-    uint256 liquidityUnbonding1 = IKeep3rV1(keep3rV1).liquidityUnbonding(address(escrow1), _liquidity, _job);
-    if (liquidityAmountsUnbonding1 > 0 && liquidityUnbonding1 < block.timestamp) {
-      return (escrow1, Actions.RemoveLiquidityFromJob);
-    }
-
-    uint256 liquidityAmountsUnbonding2 = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(address(escrow2), _liquidity, _job);
-    uint256 liquidityUnbonding2 = IKeep3rV1(keep3rV1).liquidityUnbonding(address(escrow2), _liquidity, _job);
-    if (liquidityAmountsUnbonding2 > 0 && liquidityUnbonding2 < block.timestamp) {
-      return (escrow2, Actions.RemoveLiquidityFromJob);
+    if (_escrowStep == Steps.CreditApplied) {
+      // Check if we can _removeLiquidityFromJob & instantly _addLiquidityToJob
+      uint256 liquidityAmountsUnbonding1 = IKeep3rV1(keep3rV1).liquidityAmountsUnbonding(_escrow, _liquidity, _job);
+      uint256 liquidityUnbonding1 = IKeep3rV1(keep3rV1).liquidityUnbonding(_escrow, _liquidity, _job);
+      if (liquidityAmountsUnbonding1 > 0 && liquidityUnbonding1 < block.timestamp) {
+        return (_escrow, Actions.RemoveLiquidityFromJob);
+      }
     }
 
     return (address(0), Actions.None);
   }
 
+  // TODO IMPORTANT add steps and timestamps on actions
   // Keep3r actions
   function workable(address _job) public view override returns (bool) {
     (, Actions _action) = getNextAction(_job);
