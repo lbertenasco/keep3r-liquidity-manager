@@ -9,15 +9,31 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import './Keep3rLiquidityManagerParameters.sol';
 
 interface IKeep3rLiquidityManagerUserLiquidityHandler {
-  event DepositedLiquidity(address indexed _depositor, address _recipient, address _lp, uint256 _amount);
+  event LiquidityFee(uint256 _liquidityFee);
+
+  event LiquidityMin(address _liquidity, uint256 _liquidityFee);
+
+  event DepositedLiquidity(address indexed _depositor, address _recipient, address _lp, uint256 _amount, uint256 _fee);
 
   event WithdrewLiquidity(address indexed _withdrawer, address _recipient, address _lp, uint256 _amount);
+
+  function liquidityFee() external view returns (uint256 _liquidityFee);
+
+  function feeReceiver() external view returns (address _feeReceiver);
+
+  function liquidityMinAmount(address _liquidity) external view returns (uint256 _minAmount);
 
   function liquidityTotalAmount(address _liquidity) external view returns (uint256 _amount);
 
   function userLiquidityTotalAmount(address _user, address _lp) external view returns (uint256 _amount);
 
   function userLiquidityIdleAmount(address _user, address _lp) external view returns (uint256 _amount);
+
+  function setLiquidityFee(uint256 _liquidityFee) external;
+
+  function setFeeReceiver(address _feeReceiver) external;
+
+  function setMinAmount(address _liquidity, uint256 _minAmount) external;
 
   function depositLiquidity(address _lp, uint256 _amount) external;
 
@@ -40,6 +56,13 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
+  uint256 public constant PRECISION = 1_000;
+  // liquidity fee
+  uint256 public override liquidityFee;
+  // feeReceiver address
+  address public override feeReceiver;
+  // lp => minAmount
+  mapping(address => uint256) public override liquidityMinAmount;
   // lp => amount (helps safely collect extra dust)
   mapping(address => uint256) public override liquidityTotalAmount;
   // user => lp => amount
@@ -49,6 +72,26 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
 
   constructor(address _keep3rV1) public Keep3rLiquidityManagerParameters(_keep3rV1) {}
 
+  // governor
+  function _setLiquidityFee(uint256 _liquidityFee) internal {
+    // TODO better revert messages
+    require(_liquidityFee <= PRECISION, 'fee-exceeds-100-percent');
+    liquidityFee = _liquidityFee;
+    emit LiquidityFee(_liquidityFee);
+  }
+
+  function _setFeeReceiver(address _feeReceiver) internal {
+    // TODO better revert messages
+    require(_feeReceiver != address(0), 'fee-receiver-not-address-0');
+    feeReceiver = _feeReceiver;
+  }
+
+  function _setMinAmount(address _liquidity, uint256 _minAmount) internal {
+    liquidityMinAmount[_liquidity] = _minAmount;
+    emit LiquidityMin(_liquidity, _minAmount);
+  }
+
+  // user
   function depositLiquidity(address _lp, uint256 _amount) public virtual override {
     depositLiquidityTo(msg.sender, _lp, _amount);
   }
@@ -79,9 +122,14 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
     address _lp,
     uint256 _amount
   ) internal {
+    // TODO better revert messages
+    require(liquidityMinAmount[_lp] != 0, 'liquidity-min-not-set');
+    require(liquidityMinAmount[_lp] <= _amount, 'amount-not-enough');
     IERC20(_lp).safeTransferFrom(_liquidityDepositor, address(this), _amount);
-    _addLiquidity(_liquidityRecipient, _lp, _amount);
-    emit DepositedLiquidity(_liquidityDepositor, _liquidityRecipient, _lp, _amount);
+    uint256 _fee = _amount.mul(liquidityFee).div(PRECISION);
+    IERC20(_lp).safeTransfer(feeReceiver, _fee);
+    _addLiquidity(_liquidityRecipient, _lp, _amount.sub(_fee));
+    emit DepositedLiquidity(_liquidityDepositor, _liquidityRecipient, _lp, _amount.sub(_fee), _fee);
   }
 
   function _withdrawLiquidity(

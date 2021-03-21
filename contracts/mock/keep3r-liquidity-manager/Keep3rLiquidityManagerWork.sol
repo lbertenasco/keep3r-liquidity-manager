@@ -18,6 +18,17 @@ contract Keep3rLiquidityManagerWorkMock is Keep3rLiquidityManagerWork {
     address _escrow2
   ) public Keep3rLiquidityManagerWork(_keep3rV1, _escrow1, _escrow2) {}
 
+  // UserLiquidityHandler
+  function setLiquidityFee(uint256 _liquidityFee) external override {
+    _setLiquidityFee(_liquidityFee);
+  }
+  function setFeeReceiver(address _feeReceiver) external override {
+    _setFeeReceiver(_feeReceiver);
+  }
+  function setMinAmount(address _liquidity, uint256 _minAmount) external override {
+    _setMinAmount(_liquidity, _minAmount);
+  }
+
   function setLiquidityToJobOfUser(
     address _user,
     address _job,

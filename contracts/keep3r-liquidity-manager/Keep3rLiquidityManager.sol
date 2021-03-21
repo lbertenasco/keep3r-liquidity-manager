@@ -16,6 +16,19 @@ contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3
     address _escrow2
   ) public UtilsReady() Keep3rLiquidityManagerWork(_keep3rV1, _escrow1, _escrow2) {}
 
+  // UserLiquidityHandler
+  function setLiquidityFee(uint256 _liquidityFee) external override onlyGovernor {
+    _setLiquidityFee(_liquidityFee);
+  }
+
+  function setFeeReceiver(address _feeReceiver) external override onlyGovernor {
+    _setFeeReceiver(_feeReceiver);
+  }
+
+  function setMinAmount(address _liquidity, uint256 _minAmount) external override onlyGovernor {
+    _setMinAmount(_liquidity, _minAmount);
+  }
+
   // Keep3rLiquidityManagerWork
   function work(address _job) external override onlyJob {
     (address _escrow, Actions _action) = getNextAction(_job);
