@@ -21,6 +21,8 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
   function setFeeReceiver(address _feeReceiver) external override {
     _setFeeReceiver(_feeReceiver);
   }
+
+  // UserJobsLiquidityHandler
   function setMinAmount(address _liquidity, uint256 _minAmount) external override {
     _setMinAmount(_liquidity, _minAmount);
   }

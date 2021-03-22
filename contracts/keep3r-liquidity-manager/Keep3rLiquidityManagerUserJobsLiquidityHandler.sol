@@ -10,6 +10,8 @@ import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
 import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
+  function liquidityMinAmount(address _liquidity) external view returns (uint256 _minAmount);
+
   function userJobLiquidityAmount(
     address _user,
     address _job,
@@ -25,6 +27,8 @@ interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
   function userJobCycle(address _user, address _job) external view returns (uint256 _cycle);
 
   function jobCycle(address _job) external view returns (uint256 _cycle);
+
+  function setMinAmount(address _liquidity, uint256 _minAmount) external;
 
   function setJobLiquidityAmount(
     address _job,
@@ -47,6 +51,8 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
 {
   using SafeMath for uint256;
 
+  // lp => minAmount
+  mapping(address => uint256) public override liquidityMinAmount;
   // user => job => lp => amount
   mapping(address => mapping(address => mapping(address => uint256))) public override userJobLiquidityAmount;
   // user => job => lp => amount
@@ -61,6 +67,11 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _escrow1,
     address _escrow2
   ) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
+
+  function _setMinAmount(address _liquidity, uint256 _minAmount) internal {
+    liquidityMinAmount[_liquidity] = _minAmount;
+    emit LiquidityMin(_liquidity, _minAmount);
+  }
 
   function setJobLiquidityAmount(
     address _job,
@@ -126,6 +137,12 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
+    require(liquidityMinAmount[_lp] != 0, 'Keep3rLiquidityManager::liquidity-min-not-set');
+    require(
+      userJobLiquidityLockedAmount[_user][_job][_lp].add(_amount) >= liquidityMinAmount[_lp],
+      'Keep3rLiquidityManager::locked-amount-not-enough'
+    );
+
     require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
     require(_amount >= userLiquidityIdleAmount[_user][_lp], 'Keep3rLiquidityManager::no-idle-liquidity-available');
     // set liquidity amount on user-job
@@ -135,7 +152,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     // substract amount from user idle amount
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].sub(_amount);
     // add lp to job if that lp was not being used on that job
-    if (jobLiquidityDesiredAmount[_job][_lp] == 0) _addLPToJob(_lp, _job); // TODO check if already added (can be added and desired)
+    if (jobLiquidityDesiredAmount[_job][_lp] == 0) _addLPToJob(_lp, _job);
     // add amount to desired liquidity on job
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].add(_amount);
   }
@@ -147,6 +164,13 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     uint256 _amount
   ) internal {
     require(_amount <= userJobLiquidityAmount[_user][_job][_lp], 'Keep3rLiquidityManager::not-enough-lp-in-job');
+    // only allow user job liquidity to be reduced to 0 or higher than minumum
+    require(
+      userJobLiquidityAmount[_user][_job][_lp].sub(_amount) == 0 ||
+        userJobLiquidityAmount[_user][_job][_lp].sub(_amount) >= liquidityMinAmount[_lp],
+      'Keep3rLiquidityManager::locked-amount-not-enough'
+    );
+
     userJobLiquidityAmount[_user][_job][_lp] = userJobLiquidityAmount[_user][_job][_lp].sub(_amount);
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].sub(_amount);
   }

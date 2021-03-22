@@ -54,7 +54,7 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
     }
 
     // Init (add liquidity to NotStarted escrow)
-    if ((_escrow1Step == Steps.NotStarted || _escrow2Step == Steps.NotStarted) && _jobHasDesiredLiquidity(_job)) {
+    if ((_escrow1Step == Steps.NotStarted || _escrow2Step == Steps.NotStarted) && _jobHasDesiredLiquidities(_job)) {
       _escrow = _escrow1Step == Steps.NotStarted ? escrow1 : escrow2;
       address _otherEscrow = _escrow == escrow1 ? escrow2 : escrow1;
 
@@ -86,7 +86,7 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
     return (address(0), Actions.None);
   }
 
-  function _jobHasDesiredLiquidity(address _job) internal view returns (bool) {
+  function _jobHasDesiredLiquidities(address _job) internal view returns (bool) {
     // search for desired liquidity > 0 on all job liquidities
     for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
       if (jobLiquidityDesiredAmount[_job][jobLiquidities[_job][i]] > 0) {

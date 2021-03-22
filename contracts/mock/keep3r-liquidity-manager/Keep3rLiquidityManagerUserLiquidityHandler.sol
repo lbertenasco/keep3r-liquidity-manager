@@ -21,9 +21,6 @@ contract Keep3rLiquidityManagerUserLiquidityHandlerMock is Keep3rLiquidityManage
   function setFeeReceiver(address _feeReceiver) external override {
     _setFeeReceiver(_feeReceiver);
   }
-  function setMinAmount(address _liquidity, uint256 _minAmount) external override {
-    _setMinAmount(_liquidity, _minAmount);
-  }
 
   function internalDepositLiquidity(
     address _liquidityDepositor,

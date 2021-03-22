@@ -21,8 +21,6 @@ interface IKeep3rLiquidityManagerUserLiquidityHandler {
 
   function feeReceiver() external view returns (address _feeReceiver);
 
-  function liquidityMinAmount(address _liquidity) external view returns (uint256 _minAmount);
-
   function liquidityTotalAmount(address _liquidity) external view returns (uint256 _amount);
 
   function userLiquidityTotalAmount(address _user, address _lp) external view returns (uint256 _amount);
@@ -32,8 +30,6 @@ interface IKeep3rLiquidityManagerUserLiquidityHandler {
   function setLiquidityFee(uint256 _liquidityFee) external;
 
   function setFeeReceiver(address _feeReceiver) external;
-
-  function setMinAmount(address _liquidity, uint256 _minAmount) external;
 
   function depositLiquidity(address _lp, uint256 _amount) external;
 
@@ -57,12 +53,11 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   using SafeERC20 for IERC20;
 
   uint256 public constant PRECISION = 1_000;
+  uint256 public constant MAX_LIQUIDITY_FEE = PRECISION / 10; // 10%
   // liquidity fee
   uint256 public override liquidityFee;
   // feeReceiver address
   address public override feeReceiver;
-  // lp => minAmount
-  mapping(address => uint256) public override liquidityMinAmount;
   // lp => amount (helps safely collect extra dust)
   mapping(address => uint256) public override liquidityTotalAmount;
   // user => lp => amount
@@ -75,7 +70,7 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   // governor
   function _setLiquidityFee(uint256 _liquidityFee) internal {
     // TODO better revert messages
-    require(_liquidityFee <= PRECISION, 'fee-exceeds-100-percent');
+    require(_liquidityFee <= MAX_LIQUIDITY_FEE, 'fee-exceeds-max-liquidity-fee');
     liquidityFee = _liquidityFee;
     emit LiquidityFee(_liquidityFee);
   }
@@ -84,11 +79,6 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
     // TODO better revert messages
     require(_feeReceiver != address(0), 'fee-receiver-not-address-0');
     feeReceiver = _feeReceiver;
-  }
-
-  function _setMinAmount(address _liquidity, uint256 _minAmount) internal {
-    liquidityMinAmount[_liquidity] = _minAmount;
-    emit LiquidityMin(_liquidity, _minAmount);
   }
 
   // user
@@ -122,9 +112,6 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
     address _lp,
     uint256 _amount
   ) internal {
-    // TODO better revert messages
-    require(liquidityMinAmount[_lp] != 0, 'liquidity-min-not-set');
-    require(liquidityMinAmount[_lp] <= _amount, 'amount-not-enough');
     IERC20(_lp).safeTransferFrom(_liquidityDepositor, address(this), _amount);
     uint256 _fee = _amount.mul(liquidityFee).div(PRECISION);
     IERC20(_lp).safeTransfer(feeReceiver, _fee);
