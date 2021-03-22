@@ -7,7 +7,7 @@ import { ethers } from 'hardhat';
 import { behaviours, constants, bdd } from '../../utils';
 const { when, given, then } = bdd;
 
-describe.only('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
+describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
   let owner: SignerWithAddress;
   let keep3rLiquidityManagerJobsLiquditiyHandlerContract: ContractFactory;
   let keep3rLiquidityManagerJobsLiquditiyHandler: Contract;

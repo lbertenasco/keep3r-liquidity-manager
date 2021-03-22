@@ -36,13 +36,13 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
     _setLiquidityToJobOfUser(_user, _job, _lp, _amount);
   }
 
-  function removeIdleLiquidityOfUserFromJob(
+  function subLiquidityOfUserFromJob(
     address _user,
     address _job,
     address _lp,
     uint256 _amount
   ) public {
-    _removeIdleLiquidityOfUserFromJob(_user, _job, _lp, _amount);
+    _subLiquidityOfUserFromJob(_user, _job, _lp, _amount);
   }
 
   function addLiquidityOfUserToJob(
