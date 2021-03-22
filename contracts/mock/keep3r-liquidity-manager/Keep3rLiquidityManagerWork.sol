@@ -7,12 +7,16 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import './Keep3rLiquidityManagerParameters.sol';
 import './Keep3rLiquidityManagerEscrowsHandler.sol';
 import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
+import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerWork.sol';
 
-contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityManagerUserJobsLiquidityHandler {
+contract Keep3rLiquidityManagerWorkMock is Keep3rLiquidityManagerWork {
   using SafeMath for uint256;
   
-  constructor(address _keep3rV1, address _escrow1, address _escrow2) public
-    Keep3rLiquidityManagerUserJobsLiquidityHandler(_keep3rV1, _escrow1, _escrow2) { }
+  constructor(
+    address _keep3rV1,
+    address _escrow1,
+    address _escrow2
+  ) public Keep3rLiquidityManagerWork(_keep3rV1, _escrow1, _escrow2) {}
 
   // UserLiquidityHandler
   function setLiquidityFee(uint256 _liquidityFee) external override {
@@ -21,8 +25,6 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
   function setFeeReceiver(address _feeReceiver) external override {
     _setFeeReceiver(_feeReceiver);
   }
-
-  // UserJobsLiquidityHandler
   function setMinAmount(address _liquidity, uint256 _minAmount) external override {
     _setMinAmount(_liquidity, _minAmount);
   }
@@ -45,24 +47,21 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
     _removeIdleLiquidityOfUserFromJob(_user, _job, _lp, _amount);
   }
 
-  function addLiquidityOfUserToJob(
-    address _user,
-    address _lp,
-    address _job,
-    uint256 _amount
-  ) internal {
-    _addLiquidityOfUserToJob(_user, _job, _lp, _amount);
+  // Keep3rLiquidityManagerWork
+  function work(address _job) external override {
+    (address _escrow, Actions _action) = getNextAction(_job);
+    require(_workable(_action), 'Keep3rLiquidityManager::work:not-workable');
+
+    _work(_escrow, _action, _job);
+
+    emit Worked(_job);
   }
 
-  function subLiquidityOfUserFromJob(
-    address _user,
-    address _lp,
-    address _job,
-    uint256 _amount
-  ) internal {
-    _subLiquidityOfUserFromJob(_user, _job, _lp, _amount);
+  function forceWork(address _job) external override {
+    (address _escrow, Actions _action) = getNextAction(_job);
+    _work(_escrow, _action, _job);
+    emit ForceWorked(_job);
   }
-
 
 
   // Escrow Liquidity
@@ -117,4 +116,5 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
   ) external override {
     _sendDustOnEscrow(_escrow, _to, _token, _amount);
   }
+
 }

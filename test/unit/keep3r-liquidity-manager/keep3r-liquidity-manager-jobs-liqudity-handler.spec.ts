@@ -23,7 +23,7 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
     keep3rLiquidityManagerJobsLiquditiyHandler = await keep3rLiquidityManagerJobsLiquditiyHandlerContract.deploy();
   });
 
-  describe('jobHasLP', () => {
+  describe('jobHasLiquidity', () => {
     given(async function () {
       this.jobAddress = '0xcbefaf9e348b21cd7f148f2a626350dd19319456';
       this.lpAddress1 = '0xDc25eF3F5b8A186998338a2aDa83795fBA2d695e';
@@ -36,7 +36,7 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
     when('job does not have that lp', () => {
       then('returns false', async function () {
         expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobHasLP(
+          await keep3rLiquidityManagerJobsLiquditiyHandler.jobHasLiquidity(
             this.jobAddress,
             this.lpAddress2
           )
@@ -46,7 +46,7 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
     when('job does have that lp', () => {
       then('returns false', async function () {
         expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobHasLP(
+          await keep3rLiquidityManagerJobsLiquditiyHandler.jobHasLiquidity(
             this.jobAddress,
             this.lpAddress1
           )

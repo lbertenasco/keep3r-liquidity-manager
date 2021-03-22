@@ -5,10 +5,13 @@ pragma solidity 0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import './Keep3rLiquidityManagerEscrowsHandler.sol';
 import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
 import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
+  function liquidityMinAmount(address _liquidity) external view returns (uint256 _minAmount);
+
   function userJobLiquidityAmount(
     address _user,
     address _job,
@@ -25,6 +28,8 @@ interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
 
   function jobCycle(address _job) external view returns (uint256 _cycle);
 
+  function setMinAmount(address _liquidity, uint256 _minAmount) external;
+
   function setJobLiquidityAmount(
     address _job,
     address _lp,
@@ -39,12 +44,15 @@ interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
 }
 
 abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
+  Keep3rLiquidityManagerEscrowsHandler,
   Keep3rLiquidityManagerUserLiquidityHandler,
   Keep3rLiquidityManagerJobsLiquidityHandler,
   IKeep3rLiquidityManagerUserJobsLiquidityHandler
 {
   using SafeMath for uint256;
 
+  // lp => minAmount
+  mapping(address => uint256) public override liquidityMinAmount;
   // user => job => lp => amount
   mapping(address => mapping(address => mapping(address => uint256))) public override userJobLiquidityAmount;
   // user => job => lp => amount
@@ -54,7 +62,16 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
   // job => cycle
   mapping(address => uint256) public override jobCycle;
 
-  constructor() public {}
+  constructor(
+    address _keep3rV1,
+    address _escrow1,
+    address _escrow2
+  ) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
+
+  function _setMinAmount(address _liquidity, uint256 _minAmount) internal {
+    liquidityMinAmount[_liquidity] = _minAmount;
+    emit LiquidityMin(_liquidity, _minAmount);
+  }
 
   function setJobLiquidityAmount(
     address _job,
@@ -107,11 +124,9 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     userJobLiquidityLockedAmount[_user][_job][_lp] = userJobLiquidityLockedAmount[_user][_job][_lp].sub(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].add(_amount);
 
-    uint256 _jobLiquidityAmount = 0; // TODO Get job liquidity amount from keep3rV1
-
-    if (_jobLiquidityAmount == 0) _removeLPFromJob(_lp, _job);
-
-    // TODO: emit event
+    // withdraw tokens from escrows
+    IKeep3rEscrow(escrow1).withdraw(_lp, _amount.div(2));
+    IKeep3rEscrow(escrow2).withdraw(_lp, _amount.div(2));
   }
 
   function _addLiquidityOfUserToJob(
@@ -120,6 +135,12 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
+    require(liquidityMinAmount[_lp] != 0, 'Keep3rLiquidityManager::liquidity-min-not-set');
+    require(
+      userJobLiquidityLockedAmount[_user][_job][_lp].add(_amount) >= liquidityMinAmount[_lp],
+      'Keep3rLiquidityManager::locked-amount-not-enough'
+    );
+
     require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
     require(_amount >= userLiquidityIdleAmount[_user][_lp], 'Keep3rLiquidityManager::no-idle-liquidity-available');
     // set liquidity amount on user-job
@@ -141,6 +162,13 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     uint256 _amount
   ) internal {
     require(_amount <= userJobLiquidityAmount[_user][_job][_lp], 'Keep3rLiquidityManager::not-enough-lp-in-job');
+    // only allow user job liquidity to be reduced to 0 or higher than minumum
+    require(
+      userJobLiquidityAmount[_user][_job][_lp].sub(_amount) == 0 ||
+        userJobLiquidityAmount[_user][_job][_lp].sub(_amount) >= liquidityMinAmount[_lp],
+      'Keep3rLiquidityManager::locked-amount-not-enough'
+    );
+
     userJobLiquidityAmount[_user][_job][_lp] = userJobLiquidityAmount[_user][_job][_lp].sub(_amount);
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].sub(_amount);
   }

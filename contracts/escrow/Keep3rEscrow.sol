@@ -2,30 +2,23 @@
 
 pragma solidity 0.6.12;
 
-import '@lbertenasco/contract-utils/contracts/abstract/UtilsReady.sol';
-
 import './Keep3rEscrowParameters.sol';
-import './Keep3rEscrowMetadata.sol';
 import './Keep3rEscrowLiquidityHandler.sol';
-import './Keep3rEscrowCreditsHandler.sol';
+import './IKeep3rEscrow.sol';
 
-interface IKeep3rEscrow is IKeep3rEscrowParameters, IKeep3rEscrowMetadata, IKeep3rEscrowLiquidityHandler, IKeep3rEscrowCreditsHandler {}
+contract Keep3rEscrow is Keep3rEscrowParameters, Keep3rEscrowLiquidityHandler, IKeep3rEscrow {
+  constructor(address _keep3r) public Keep3rEscrowParameters(_keep3r) {}
 
-contract Keep3rEscrow is
-  UtilsReady,
-  Keep3rEscrowParameters,
-  Keep3rEscrowMetadata,
-  Keep3rEscrowLiquidityHandler,
-  Keep3rEscrowCreditsHandler,
-  IKeep3rEscrow
-{
-  constructor(address _governance, IKeep3rV1 _keep3r) public Keep3rEscrowParameters(_governance, _keep3r) UtilsReady() {
-    // _addProtocolToken(address(_lpToken)); => Add all liquidity tokens ?
+  // Manager Liquidity Handler
+  function deposit(address _liquidity, uint256 _amount) external override onlyGovernor {
+    _deposit(_liquidity, _amount);
   }
 
-  // TODO: Emergency exit
+  function withdraw(address _liquidity, uint256 _amount) external override onlyGovernor {
+    _withdraw(_liquidity, _amount);
+  }
 
-  // Liquidity Handler
+  // Job Liquidity Handler
   function addLiquidityToJob(
     address _liquidity,
     address _job,
@@ -34,8 +27,12 @@ contract Keep3rEscrow is
     _addLiquidityToJob(_liquidity, _job, _amount);
   }
 
-  function removeLiquidityFromJob(address _liquidity, address _job) external override onlyGovernor {
-    _removeLiquidityFromJob(_liquidity, _job);
+  function applyCreditToJob(
+    address _provider,
+    address _liquidity,
+    address _job
+  ) external override onlyGovernor {
+    _applyCreditToJob(_provider, _liquidity, _job);
   }
 
   function unbondLiquidityFromJob(
@@ -46,21 +43,15 @@ contract Keep3rEscrow is
     _unbondLiquidityFromJob(_liquidity, _job, _amount);
   }
 
-  // Credits Handler
-  function applyCreditToJob(
-    address _provider,
-    address _liquidity,
-    address _job
+  function removeLiquidityFromJob(address _liquidity, address _job) external override onlyGovernor returns (uint256 _amount) {
+    return _removeLiquidityFromJob(_liquidity, _job);
+  }
+
+  function sendDust(
+    address _to,
+    address _token,
+    uint256 _amount
   ) external override onlyGovernor {
-    _applyCreditToJob(_provider, _liquidity, _job);
-  }
-
-  // Parameters
-  function setGovernance(address _governance) external override onlyGovernor {
-    _setGovernance(_governance);
-  }
-
-  function setKeep3rV1(IKeep3rV1 _keep3rV1) external override onlyGovernor {
-    _setKeep3rV1(_keep3rV1);
+    _safeSendDust(_to, _token, _amount);
   }
 }

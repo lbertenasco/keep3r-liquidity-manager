@@ -2,43 +2,15 @@
 
 pragma solidity 0.6.12;
 
-import '@openzeppelin/contracts/math/SafeMath.sol';
-import '@lbertenasco/contract-utils/interfaces/keep3r/IKeep3rV1.sol';
+import '@lbertenasco/contract-utils/contracts/abstract/UtilsReady.sol';
 
-interface IKeep3rEscrowParameters {
-  event GovernanceSet(address _governance);
-  event Keep3rV1Set(IKeep3rV1 _keep3rV1);
-  event LPsReturnedToGovernance(address _governance, uint256 _amount);
+import './IKeep3rEscrowParameters.sol';
 
-  function governance() external returns (address);
+abstract contract Keep3rEscrowParameters is UtilsReady, IKeep3rEscrowParameters {
+  address public immutable override keep3r;
 
-  function keep3rV1() external returns (IKeep3rV1);
-
-  function setGovernance(address _governance) external;
-
-  function setKeep3rV1(IKeep3rV1 _keep3rV1) external;
-}
-
-abstract contract Keep3rEscrowParameters is IKeep3rEscrowParameters {
-  using SafeMath for uint256;
-
-  address public override governance;
-  IKeep3rV1 public override keep3rV1;
-
-  constructor(address _governance, IKeep3rV1 _keep3r) public {
-    _setGovernance(_governance);
-    _setKeep3rV1(_keep3r);
-  }
-
-  function _setGovernance(address _governance) internal {
-    require(_governance != address(0), 'Keep3rEscrowParameters::_setGovernance::zero-address');
-    governance = _governance;
-    emit GovernanceSet(_governance);
-  }
-
-  function _setKeep3rV1(IKeep3rV1 _keep3rV1) internal {
-    require(address(_keep3rV1) != address(0), 'Keep3rEscrowParameters::_setKeep3rV1::zero-address');
-    keep3rV1 = _keep3rV1;
-    emit Keep3rV1Set(_keep3rV1);
+  constructor(address _keep3r) public UtilsReady() {
+    require(address(_keep3r) != address(0), 'Keep3rEscrowParameters::constructor::keep3r-zero-address');
+    keep3r = _keep3r;
   }
 }

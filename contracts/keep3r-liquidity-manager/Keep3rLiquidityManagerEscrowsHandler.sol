@@ -2,7 +2,10 @@
 
 pragma solidity 0.6.12;
 
-import '../interfaces/IKeep3rEscrow.sol';
+import '@lbertenasco/contract-utils/interfaces/utils/IGovernable.sol';
+import '@lbertenasco/contract-utils/interfaces/utils/ICollectableDust.sol';
+
+import '../escrow/IKeep3rEscrow.sol';
 
 interface IKeep3rLiquidityManagerEscrowsHandler {
   event Escrow1Set(address _escrow1);
@@ -14,8 +17,6 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
   function escrow2() external view returns (address _escrow2);
 
   function isValidEscrow(address _escrow) external view returns (bool);
-
-  function returnLPsToGovernance(address _escrow) external;
 
   function addLiquidityToJob(
     address _escrow,
@@ -41,7 +42,7 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
     address _escrow,
     address _liquidity,
     address _job
-  ) external;
+  ) external returns (uint256 _amount);
 
   function setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) external;
 
@@ -75,14 +76,12 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
 
   function _setEscrow1(address _escrow1) internal {
     require(address(_escrow1) != address(0), 'Keep3rLiquidityManager::zero-address');
-    require(IKeep3rEscrow(_escrow1).isKeep3rEscrow(), 'Keep3rLiquidityManager::not-keep3r-escrow');
     escrow1 = _escrow1;
     emit Escrow1Set(_escrow1);
   }
 
   function _setEscrow2(address _escrow2) internal {
     require(address(_escrow2) != address(0), 'Keep3rLiquidityManager::zero-address');
-    require(IKeep3rEscrow(_escrow2).isKeep3rEscrow(), 'Keep3rLiquidityManager::not-keep3r-escrow');
     escrow2 = _escrow2;
     emit Escrow2Set(_escrow2);
   }
@@ -117,20 +116,16 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
     address _escrow,
     address _liquidity,
     address _job
-  ) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
-  }
-
-  function _returnLPsToGovernance(address _escrow) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).returnLPsToGovernance();
+  ) internal _assertIsValidEscrow(_escrow) returns (uint256 _amount) {
+    return IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
   }
 
   function _setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).setPendingGovernor(_pendingGovernor);
+    IGovernable(_escrow).setPendingGovernor(_pendingGovernor);
   }
 
   function _acceptGovernorOnEscrow(address _escrow) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).acceptGovernor();
+    IGovernable(_escrow).acceptGovernor();
   }
 
   function _sendDustOnEscrow(
@@ -139,6 +134,6 @@ abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManage
     address _token,
     uint256 _amount
   ) internal _assertIsValidEscrow(_escrow) {
-    IKeep3rEscrow(_escrow).sendDust(_to, _token, _amount);
+    ICollectableDust(_escrow).sendDust(_to, _token, _amount);
   }
 }

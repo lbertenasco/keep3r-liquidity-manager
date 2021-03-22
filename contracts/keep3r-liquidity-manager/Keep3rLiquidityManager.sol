@@ -9,13 +9,25 @@ import '@lbertenasco/contract-utils/contracts/abstract/UtilsReady.sol';
 import './Keep3rLiquidityManagerWork.sol';
 import './Keep3rLiquidityManagerJobHandler.sol';
 
-// TODO: Should not be abstract
-abstract contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3rLiquidityManagerJobHandler {
+contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3rLiquidityManagerJobHandler {
   constructor(
     address _keep3rV1,
     address _escrow1,
     address _escrow2
-  ) public UtilsReady() Keep3rLiquidityManagerParameters(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
+  ) public UtilsReady() Keep3rLiquidityManagerWork(_keep3rV1, _escrow1, _escrow2) {}
+
+  // UserLiquidityHandler
+  function setLiquidityFee(uint256 _liquidityFee) external override onlyGovernor {
+    _setLiquidityFee(_liquidityFee);
+  }
+
+  function setFeeReceiver(address _feeReceiver) external override onlyGovernor {
+    _setFeeReceiver(_feeReceiver);
+  }
+
+  function setMinAmount(address _liquidity, uint256 _minAmount) external override onlyGovernor {
+    _setMinAmount(_liquidity, _minAmount);
+  }
 
   // Keep3rLiquidityManagerWork
   function work(address _job) external override onlyJob {
@@ -44,11 +56,63 @@ abstract contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWo
     uint256 _amount
   ) external override onlyGovernor {
     // TODO Protect _liquidity tokens with liquidityTotalAmount[_liquidity]
-    // TODO Add liquidityIdleTotalAmount[_liquidity]
     /*
       uinst256 _idleBalance = IERC20(_token).balanceOf(address(this));
       require(amount <= liquidityIdleTotalAmount[_liquidity].sub(_idleBalance), 'amount-greater-than-extra-idle-liquidity');
       _sendDust(_to, _token, _amount);
        */
+  }
+
+  // Escrow Liquidity
+  function addLiquidityToJob(
+    address _escrow,
+    address _liquidity,
+    address _job,
+    uint256 _amount
+  ) external override onlyGovernor {
+    _addLiquidityToJob(_escrow, _liquidity, _job, _amount);
+  }
+
+  function applyCreditToJob(
+    address _escrow,
+    address _liquidity,
+    address _job
+  ) external override onlyGovernor {
+    _applyCreditToJob(_escrow, _liquidity, _job);
+  }
+
+  function unbondLiquidityFromJob(
+    address _escrow,
+    address _liquidity,
+    address _job,
+    uint256 _amount
+  ) external override onlyGovernor {
+    _unbondLiquidityFromJob(_escrow, _liquidity, _job, _amount);
+  }
+
+  function removeLiquidityFromJob(
+    address _escrow,
+    address _liquidity,
+    address _job
+  ) external override onlyGovernor returns (uint256 _amount) {
+    return _removeLiquidityFromJob(_escrow, _liquidity, _job);
+  }
+
+  // Escrow Governor
+  function setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) external override onlyGovernor {
+    _setPendingGovernorOnEscrow(_escrow, _pendingGovernor);
+  }
+
+  function acceptGovernorOnEscrow(address _escrow) external override onlyGovernor {
+    _acceptGovernorOnEscrow(_escrow);
+  }
+
+  function sendDustOnEscrow(
+    address _escrow,
+    address _to,
+    address _token,
+    uint256 _amount
+  ) external override onlyGovernor {
+    _sendDustOnEscrow(_escrow, _to, _token, _amount);
   }
 }

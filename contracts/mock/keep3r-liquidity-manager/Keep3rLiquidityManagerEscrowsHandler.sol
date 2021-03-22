@@ -2,6 +2,9 @@
 
 pragma solidity 0.6.12;
 
+import '@lbertenasco/contract-utils/interfaces/utils/IGovernable.sol';
+import '@lbertenasco/contract-utils/interfaces/utils/ICollectableDust.sol';
+
 import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerEscrowsHandler.sol';
 
 contract Keep3rLiquidityManagerEscrowsHandlerMock is Keep3rLiquidityManagerEscrowsHandler {
@@ -50,20 +53,16 @@ contract Keep3rLiquidityManagerEscrowsHandlerMock is Keep3rLiquidityManagerEscro
     address _escrow,
     address _liquidity,
     address _job
-  ) public override {
-    IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
-  }
-
-  function returnLPsToGovernance(address _escrow) public override {
-    IKeep3rEscrow(_escrow).returnLPsToGovernance();
+  ) public override returns (uint256 _amount) {
+    return IKeep3rEscrow(_escrow).removeLiquidityFromJob(_liquidity, _job);
   }
 
   function setPendingGovernorOnEscrow(address _escrow, address _pendingGovernor) public override {
-    IKeep3rEscrow(_escrow).setPendingGovernor(_pendingGovernor);
+    IGovernable(_escrow).setPendingGovernor(_pendingGovernor);
   }
 
   function acceptGovernorOnEscrow(address _escrow) public override {
-    IKeep3rEscrow(_escrow).acceptGovernor();
+    IGovernable(_escrow).acceptGovernor();
   }
 
   function sendDustOnEscrow(
@@ -72,6 +71,6 @@ contract Keep3rLiquidityManagerEscrowsHandlerMock is Keep3rLiquidityManagerEscro
     address _token,
     uint256 _amount
   ) public override {
-    IKeep3rEscrow(_escrow).sendDust(_to, _token, _amount);
+    ICollectableDust(_escrow).sendDust(_to, _token, _amount);
   }
 }
