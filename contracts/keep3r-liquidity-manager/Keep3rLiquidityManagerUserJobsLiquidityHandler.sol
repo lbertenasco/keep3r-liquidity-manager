@@ -150,7 +150,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     // substract amount from user idle amount
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].sub(_amount);
     // add lp to job if that lp was not being used on that job
-    if (jobLiquidityDesiredAmount[_job][_lp] == 0) _addLPToJob(_lp, _job);
+    if (jobLiquidityDesiredAmount[_job][_lp] == 0) _addLPToJob(_job, _lp);
     // add amount to desired liquidity on job
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].add(_amount);
   }
