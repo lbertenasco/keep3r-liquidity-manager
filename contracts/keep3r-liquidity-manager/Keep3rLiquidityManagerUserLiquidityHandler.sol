@@ -65,7 +65,9 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   // user => lp => amount
   mapping(address => mapping(address => uint256)) public override userLiquidityIdleAmount;
 
-  constructor(address _keep3rV1) public Keep3rLiquidityManagerParameters(_keep3rV1) {}
+  constructor(address _keep3rV1) public Keep3rLiquidityManagerParameters(_keep3rV1) {
+    _setFeeReceiver(msg.sender);
+  }
 
   // governor
   function _setLiquidityFee(uint256 _liquidityFee) internal {
@@ -114,7 +116,7 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   ) internal {
     IERC20(_lp).safeTransferFrom(_liquidityDepositor, address(this), _amount);
     uint256 _fee = _amount.mul(liquidityFee).div(PRECISION);
-    IERC20(_lp).safeTransfer(feeReceiver, _fee);
+    if (_fee > 0) IERC20(_lp).safeTransfer(feeReceiver, _fee);
     _addLiquidity(_liquidityRecipient, _lp, _amount.sub(_fee));
     emit DepositedLiquidity(_liquidityDepositor, _liquidityRecipient, _lp, _amount.sub(_fee), _fee);
   }
