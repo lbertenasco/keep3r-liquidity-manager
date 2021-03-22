@@ -56,7 +56,6 @@ contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3
     uint256 _amount
   ) external override onlyGovernor {
     // TODO Protect _liquidity tokens with liquidityTotalAmount[_liquidity]
-    // TODO Add liquidityIdleTotalAmount[_liquidity]
     /*
       uinst256 _idleBalance = IERC20(_token).balanceOf(address(this));
       require(amount <= liquidityIdleTotalAmount[_liquidity].sub(_idleBalance), 'amount-greater-than-extra-idle-liquidity');
