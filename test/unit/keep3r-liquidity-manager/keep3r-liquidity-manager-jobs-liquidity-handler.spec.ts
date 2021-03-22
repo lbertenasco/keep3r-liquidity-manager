@@ -7,7 +7,7 @@ import { ethers } from 'hardhat';
 import { behaviours, constants, bdd } from '../../utils';
 const { when, given, then } = bdd;
 
-describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
+describe.only('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
   let owner: SignerWithAddress;
   let keep3rLiquidityManagerJobsLiquditiyHandlerContract: ContractFactory;
   let keep3rLiquidityManagerJobsLiquditiyHandler: Contract;
@@ -23,35 +23,27 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
     keep3rLiquidityManagerJobsLiquditiyHandler = await keep3rLiquidityManagerJobsLiquditiyHandlerContract.deploy();
   });
 
-  describe('jobHasLiquidity', () => {
-    given(async function () {
-      this.jobAddress = '0xcbefaf9e348b21cd7f148f2a626350dd19319456';
-      this.lpAddress1 = '0xDc25eF3F5b8A186998338a2aDa83795fBA2d695e';
-      this.lpAddress2 = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c';
-      await keep3rLiquidityManagerJobsLiquditiyHandler.addLPToJob(
-        this.jobAddress,
-        this.lpAddress1
-      );
+  describe('addJob', () => {
+    when('doenst exist in jobs', () => {
+      then('adds it');
+      then('emits event');
     });
-    when('job does not have that lp', () => {
-      then('returns false', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobHasLiquidity(
-            this.jobAddress,
-            this.lpAddress2
-          )
-        ).to.be.false;
-      });
+    when('exists in jobs', () => {
+      then('tx is not reverted');
+      then('jobs is not modified');
+      then('event is not emitted');
     });
-    when('job does have that lp', () => {
-      then('returns false', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobHasLiquidity(
-            this.jobAddress,
-            this.lpAddress1
-          )
-        ).to.be.true;
-      });
+  });
+
+  describe('removeJob', () => {
+    when('doenst exist in jobs', () => {
+      then('tx is not reverted');
+      then('jobs is not modified');
+      then('event is not emitted');
+    });
+    when('exists in jobs', () => {
+      then('removes it');
+      then('emits event');
     });
   });
 
@@ -60,10 +52,7 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
       given(async function () {
         this.jobAddress = '0xcbefaf9e348b21cd7f148f2a626350dd19319456';
         this.lpAddress = '0xDc25eF3F5b8A186998338a2aDa83795fBA2d695e';
-        this.jobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
-          this.jobAddress
-        );
-        this.jobLiquidityIndexes = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
+        this.jobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
           this.jobAddress
         );
         this.addLPToJobTx = await keep3rLiquidityManagerJobsLiquditiyHandler.addLPToJob(
@@ -74,30 +63,20 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
       then('gets added to job liquidities', async function () {
         expect(
           _.difference(
-            await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+            await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
               this.jobAddress
             ),
             this.jobLiquidities
           )
         ).to.deep.equal([this.lpAddress]);
       });
-      then('job lp index is assigned correctly', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidityIndex(
-            this.jobAddress,
-            this.lpAddress
-          )
-        ).to.equal(0);
-      });
+      then('adds job to jobs');
     });
     when('LP already exists in job', () => {
       given(async function () {
         this.jobAddress = '0xcbefaf9e348b21cd7f148f2a626350dd19319456';
         this.lpAddress = '0xDc25eF3F5b8A186998338a2aDa83795fBA2d695e';
-        this.jobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
-          this.jobAddress
-        );
-        this.jobLiquidityIndexes = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
+        this.jobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
           this.jobAddress
         );
         await keep3rLiquidityManagerJobsLiquditiyHandler.addLPToJob(
@@ -115,23 +94,10 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
       });
       then('job liquidities is not modified', async function () {
         expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
             this.jobAddress
           )
         ).to.deep.equal([this.lpAddress]);
-      });
-      then('job liqudity indexes is not modified', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidityIndex(
-            this.jobAddress,
-            this.lpAddress
-          )
-        ).to.equal(0);
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
-            this.jobAddress
-          )
-        ).to.deep.equal([[this.lpAddress, BigNumber.from('0')]]);
       });
     });
     when('there is an LP already in job', () => {
@@ -143,14 +109,14 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
           this.jobAddress,
           this.lpAddress1
         );
-        this.initialJobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+        this.initialJobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
           this.jobAddress
         );
         await keep3rLiquidityManagerJobsLiquditiyHandler.addLPToJob(
           this.jobAddress,
           this.lpAddress2
         );
-        this.finalJobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+        this.finalJobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
           this.jobAddress
         );
       });
@@ -158,14 +124,6 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
         expect(
           _.difference(this.finalJobLiquidities, this.initialJobLiquidities)
         ).to.deep.equal([this.lpAddress2]);
-      });
-      then('job lp index is assigned correctly', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidityIndex(
-            this.jobAddress,
-            this.lpAddress2
-          )
-        ).to.equal(1);
       });
     });
   });
@@ -175,10 +133,7 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
       given(async function () {
         this.jobAddress = '0xcbefaf9e348b21cd7f148f2a626350dd19319456';
         this.lpAddress = '0xDc25eF3F5b8A186998338a2aDa83795fBA2d695e';
-        this.jobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
-          this.jobAddress
-        );
-        this.jobLiquidityIndexes = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
+        this.jobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
           this.jobAddress
         );
         this.removeTx = keep3rLiquidityManagerJobsLiquditiyHandler.removeLPFromJob(
@@ -192,17 +147,10 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
       });
       then('job liquidities is not modified', async function () {
         expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
             this.jobAddress
           )
         ).to.deep.equal(this.jobLiquidities);
-      });
-      then('job liqudity indexes is not modified', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
-            this.jobAddress
-          )
-        ).to.deep.equal(this.jobLiquidityIndexes);
       });
     });
     when('LP did exist in job and its the only one', () => {
@@ -220,18 +168,12 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
       });
       then('gets removed from job liqudities', async function () {
         expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
             this.jobAddress
           )
         ).to.be.empty;
       });
-      then('job liquditiy index from lp is removed', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
-            this.jobAddress
-          )
-        ).to.be.empty;
-      });
+      then('removes job from jobs');
     });
     when('LP did exist in job and its not the only one', () => {
       given(async function () {
@@ -255,54 +197,16 @@ describe('Keep3rLiquidityManagerJobsLiquidityHandler', () => {
           this.jobAddress,
           this.lpAddress1
         );
-        this.finalJobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+        this.finalJobLiquidities = await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
           this.jobAddress
         );
       });
-      then(
-        'last job liquidity swaps indexes with removed lp',
-        async function () {
-          expect(
-            await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
-              this.jobAddress,
-              0
-            )
-          ).to.equal(this.lpAddress3);
-        }
-      );
-      then(
-        'last job liqudity index swaps with removed lp index',
-        async function () {
-          expect(
-            await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidityIndex(
-              this.jobAddress,
-              this.lpAddress3
-            )
-          ).to.equal(0);
-        }
-      );
       then('gets removed from job liqudities', async function () {
         expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidities(
+          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidities(
             this.jobAddress
           )
         ).to.deep.equal([this.lpAddress3, this.lpAddress2]);
-      });
-      then('job liquditiy index from lp is removed', async function () {
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.jobLiquidityIndex(
-            this.jobAddress,
-            this.lpAddress1
-          )
-        ).to.equal(0);
-        expect(
-          await keep3rLiquidityManagerJobsLiquditiyHandler.getJobLiquidityIndexes(
-            this.jobAddress
-          )
-        ).to.deep.equal([
-          [this.lpAddress3, BigNumber.from('0')],
-          [this.lpAddress2, BigNumber.from('1')],
-        ]);
       });
     });
   });

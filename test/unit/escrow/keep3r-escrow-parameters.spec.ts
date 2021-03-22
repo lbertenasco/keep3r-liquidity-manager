@@ -4,7 +4,7 @@ import { Contract, ContractFactory, utils } from 'ethers';
 import { ethers } from 'hardhat';
 import { behaviours, constants, erc20 } from '../../utils';
 
-describe('Keep3rEscrowParameters', () => {
+describe.skip('Keep3rEscrowParameters', () => {
   let owner: SignerWithAddress;
   let keep3rEscrowParametersContract: ContractFactory;
   let keep3rEscrowParameters: Contract;
