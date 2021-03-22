@@ -3,7 +3,7 @@
   "plugins": ["prettier"],
   "rules": {
     "prettier/prettier": "error",
-    "compiler-version": ["off"],
+    "compiler-version": ["error", "^0.6.12"],
     "constructor-syntax": "warn",
     "quotes": ["error", "single"],
     "private-vars-leading-underscore": ["warn", { "strict": false }],
