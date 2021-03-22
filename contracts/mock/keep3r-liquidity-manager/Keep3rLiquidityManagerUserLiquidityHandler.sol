@@ -10,17 +10,11 @@ import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerUserLiquidityHandle
 import './Keep3rLiquidityManagerParameters.sol';
 
 
-contract Keep3rLiquidityManagerUserLiquidityHandlerMock is Keep3rLiquidityManagerUserLiquidityHandler{
+contract Keep3rLiquidityManagerUserLiquidityHandlerMock is 
+  Keep3rLiquidityManagerParameters, 
+  Keep3rLiquidityManagerUserLiquidityHandler {
 
   constructor(address _keep3rV1) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) { }
-
-  // UserLiquidityHandler
-  function setLiquidityFee(uint256 _liquidityFee) external override {
-    _setLiquidityFee(_liquidityFee);
-  }
-  function setFeeReceiver(address _feeReceiver) external override {
-    _setFeeReceiver(_feeReceiver);
-  }
 
   function internalDepositLiquidity(
     address _liquidityDepositor,
@@ -77,5 +71,13 @@ contract Keep3rLiquidityManagerUserLiquidityHandlerMock is Keep3rLiquidityManage
     uint256 _amount
   ) public {
     userLiquidityIdleAmount[_user][_lp] = _amount;
+  }
+
+  function setLiquidityFee(uint256 _liquidityFee) external override {
+    _setLiquidityFee(_liquidityFee);
+  }
+  
+  function setFeeReceiver(address _feeReceiver) external override {
+    _setFeeReceiver(_feeReceiver);
   }
 }

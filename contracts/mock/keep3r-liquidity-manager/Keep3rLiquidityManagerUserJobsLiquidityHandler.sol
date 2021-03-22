@@ -6,6 +6,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 
 import './Keep3rLiquidityManagerParameters.sol';
 import './Keep3rLiquidityManagerEscrowsHandler.sol';
+import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
 import '../../keep3r-liquidity-manager/Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
 
 contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityManagerUserJobsLiquidityHandler {
@@ -13,19 +14,6 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
   
   constructor(address _keep3rV1, address _escrow1, address _escrow2) public
     Keep3rLiquidityManagerUserJobsLiquidityHandler(_keep3rV1, _escrow1, _escrow2) { }
-
-  // UserLiquidityHandler
-  function setLiquidityFee(uint256 _liquidityFee) external override {
-    _setLiquidityFee(_liquidityFee);
-  }
-  function setFeeReceiver(address _feeReceiver) external override {
-    _setFeeReceiver(_feeReceiver);
-  }
-
-  // UserJobsLiquidityHandler
-  function setMinAmount(address _liquidity, uint256 _minAmount) external override {
-    _setMinAmount(_liquidity, _minAmount);
-  }
 
   function setLiquidityToJobOfUser(
     address _user,
@@ -63,7 +51,19 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is Keep3rLiquidityMa
     _subLiquidityOfUserFromJob(_user, _job, _lp, _amount);
   }
 
+  // UserLiquidityHandler
+  function setLiquidityFee(uint256 _liquidityFee) external override {
+    _setLiquidityFee(_liquidityFee);
+  }
 
+  function setFeeReceiver(address _feeReceiver) external override {
+    _setFeeReceiver(_feeReceiver);
+  }
+
+  // UserJobsLiquidityHandler
+  function setMinAmount(address _liquidity, uint256 _minAmount) external override {
+    _setMinAmount(_liquidity, _minAmount);
+  }
 
   // Escrow Liquidity
   function addLiquidityToJob(
