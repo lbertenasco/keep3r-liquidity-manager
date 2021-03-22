@@ -154,6 +154,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         IERC20(_liquidity).approve(_escrow, _escrowAmount);
         IKeep3rEscrow(_escrow).deposit(_liquidity, _escrowAmount);
         _addLiquidityToJob(_escrow, _liquidity, _job, _escrowAmount);
+        jobEscrowStep[_job][_escrow] = Steps.LiquidityAdded;
+        jobEscrowTimestamp[_job][_escrow] = block.timestamp;
       }
 
       // ApplyCreditToJob (_unbondLiquidityFromJob, _removeLiquidityFromJob, _addLiquidityToJob)
@@ -166,11 +168,15 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_otherEscrow, _liquidity, _job);
         if (_liquidityProvided > 0) {
           _unbondLiquidityFromJob(_otherEscrow, _liquidity, _job, _liquidityProvided);
+          jobEscrowStep[_job][_otherEscrow] = Steps.UnbondingLiquidity;
+          jobEscrowTimestamp[_job][_otherEscrow] = block.timestamp;
         }
       }
       // Run applyCreditToJob
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
         _applyCreditToJob(_escrow, jobLiquidities[_job][i], _job);
+        jobEscrowStep[_job][_escrow] = Steps.CreditApplied;
+        jobEscrowTimestamp[_job][_escrow] = block.timestamp;
       }
 
       // UnbondLiquidityFromJob
@@ -181,6 +187,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_escrow, _liquidity, _job);
         if (_liquidityProvided > 0) {
           _unbondLiquidityFromJob(_escrow, _liquidity, _job, _liquidityProvided);
+          jobEscrowStep[_job][_escrow] = Steps.UnbondingLiquidity;
+          jobEscrowTimestamp[_job][_escrow] = block.timestamp;
         }
       }
 
@@ -190,9 +198,13 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         address _liquidity = jobLiquidities[_job][i];
         // remove liquidity
         uint256 _amount = _removeLiquidityFromJob(_escrow, _liquidity, _job);
+        jobEscrowStep[_job][_escrow] = Steps.NotStarted;
+        jobEscrowTimestamp[_job][_escrow] = block.timestamp;
+
+        // increase jobCycle
+        jobCycle[_job] = jobCycle[_job].add(1);
 
         uint256 _escrowAmount = jobLiquidityDesiredAmount[_job][_liquidity].div(2);
-
         // check if a withdraw or deposit is needed
         if (_amount > _escrowAmount) {
           IKeep3rEscrow(_escrow).withdraw(_liquidity, _amount.sub(_escrowAmount));
@@ -204,6 +216,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         // add liquidity
         if (_escrowAmount > 0) {
           _addLiquidityToJob(_escrow, _liquidity, _job, _escrowAmount);
+          jobEscrowStep[_job][_escrow] = Steps.LiquidityAdded;
+          jobEscrowTimestamp[_job][_escrow] = block.timestamp;
         }
       }
     }
