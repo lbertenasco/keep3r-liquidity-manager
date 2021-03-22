@@ -194,6 +194,7 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
 
       // RemoveLiquidityFromJob
     } else if (_action == Actions.RemoveLiquidityFromJob) {
+      address[] memory _LPsToRemove = new address[](jobLiquidities[_job].length);
       for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
         address _liquidity = jobLiquidities[_job][i];
         // remove liquidity
@@ -219,16 +220,15 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
           jobEscrowStep[_job][_escrow] = Steps.LiquidityAdded;
           jobEscrowTimestamp[_job][_escrow] = block.timestamp;
         }
+
+        uint256 _liquidityInUse =
+          IKeep3rEscrow(escrow1).liquidityTotalAmount(_liquidity).add(IKeep3rEscrow(escrow2).liquidityTotalAmount(_liquidity));
+        if (_liquidityInUse == 0) _LPsToRemove[_LPsToRemove.length] = _liquidity;
       }
-    }
 
-    // Try to clean LP after execution
-    for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-      address _liquidity = jobLiquidities[_job][i];
-
-      uint256 _liquidityInUse =
-        IKeep3rEscrow(escrow1).liquidityTotalAmount(_liquidity).add(IKeep3rEscrow(escrow2).liquidityTotalAmount(_liquidity));
-      if (_liquidityInUse == 0) _removeLPFromJob(_liquidity, _job);
+      for (uint256 i = 0; i < _LPsToRemove.length; i++) {
+        _removeLPFromJob(_LPsToRemove[i], _job);
+      }
     }
   }
 }

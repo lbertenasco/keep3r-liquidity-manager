@@ -47,24 +47,6 @@ contract Keep3rLiquidityManagerWorkMock is Keep3rLiquidityManagerWork {
     _removeIdleLiquidityOfUserFromJob(_user, _job, _lp, _amount);
   }
 
-  function addLiquidityOfUserToJob(
-    address _user,
-    address _lp,
-    address _job,
-    uint256 _amount
-  ) internal {
-    _addLiquidityOfUserToJob(_user, _job, _lp, _amount);
-  }
-
-  function reduceLiquidityOfUserFromJob(
-    address _user,
-    address _lp,
-    address _job,
-    uint256 _amount
-  ) internal {
-    _reduceLiquidityOfUserFromJob(_user, _job, _lp, _amount);
-  }
-
   // Keep3rLiquidityManagerWork
   function work(address _job) external override {
     (address _escrow, Actions _action) = getNextAction(_job);
