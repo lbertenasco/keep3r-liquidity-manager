@@ -87,8 +87,9 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     if (_amount > userJobLiquidityLockedAmount[_user][_job][_lp]) {
       _addLiquidityOfUserToJob(_user, _lp, _job, _amount.sub(userJobLiquidityAmount[_user][_job][_lp]));
     } else {
-      _reduceLiquidityOfUserFromJob(_user, _lp, _job, userJobLiquidityAmount[_user][_job][_lp].sub(_amount));
+      _subLiquidityOfUserFromJob(_user, _lp, _job, userJobLiquidityAmount[_user][_job][_lp].sub(_amount));
     }
+    // TODO: emit event
   }
 
   function _removeIdleLiquidityOfUserFromJob(
@@ -109,6 +110,8 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     uint256 _jobLiquidityAmount = 0; // TODO Get job liquidity amount from keep3rV1
 
     if (_jobLiquidityAmount == 0) _removeLPFromJob(_lp, _job);
+
+    // TODO: emit event
   }
 
   function _addLiquidityOfUserToJob(
@@ -131,7 +134,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     jobLiquidityDesiredAmount[_job][_lp] = jobLiquidityDesiredAmount[_job][_lp].add(_amount);
   }
 
-  function _reduceLiquidityOfUserFromJob(
+  function _subLiquidityOfUserFromJob(
     address _user,
     address _lp,
     address _job,
