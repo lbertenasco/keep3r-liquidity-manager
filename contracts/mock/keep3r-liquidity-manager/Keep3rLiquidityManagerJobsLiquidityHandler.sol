@@ -27,4 +27,8 @@ contract Keep3rLiquidityManagerJobsLiquidityHandlerMock is Keep3rLiquidityManage
   function removeLPFromJob(address _job, address _lp) public {
     _removeLPFromJob(_job, _lp);
   }
+
+  function setJobLiquidityDesiredAmount(address _job, address _lp, uint256 _amount) public {
+    jobLiquidityDesiredAmount[_job][_lp] = _amount;
+  }
 }
