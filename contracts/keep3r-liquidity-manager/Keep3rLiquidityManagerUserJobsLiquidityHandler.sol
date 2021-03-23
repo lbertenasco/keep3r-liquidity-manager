@@ -2,6 +2,8 @@
 
 pragma solidity 0.6.12;
 
+import 'hardhat/console.sol';
+
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
@@ -12,6 +14,7 @@ import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
 interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
   event LiquidityMinSet(address _liquidity, uint256 _minAmount);
   event LiquidityOfJobSet(address indexed _user, address _liquidity, address _job, uint256 _amount);
+  event IdleLiquidityRemovedFromJob(address indexed _user, address _liquidity, address _job, uint256 _amount);
 
   function liquidityMinAmount(address _liquidity) external view returns (uint256 _minAmount);
 
@@ -112,18 +115,21 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
-    _amount = _amount.div(2).mul(2); // removes potential decimal dust
-    require(jobCycle[_job] >= userJobCycle[_user][_job].add(2), 'Keep3rLiquidityManager::liquidity-still-locked');
+    require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
+    require(userJobCycle[_user][_job].add(2) <= jobCycle[_job], 'Keep3rLiquidityManager::liquidity-still-locked');
 
-    uint256 _idleAmount = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(userJobLiquidityAmount[_user][_job][_liquidity]);
-    require(_amount <= _idleAmount, 'Keep3rLiquidityManager::amount-bigger-than-idle-available');
+    _amount = _amount.div(2).mul(2);
+
+    uint256 _unlockedIdleAvailable = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(userJobLiquidityAmount[_user][_job][_liquidity]);
+    require(_amount <= _unlockedIdleAvailable, 'Keep3rLiquidityManager::amount-bigger-than-idle-available');
 
     userJobLiquidityLockedAmount[_user][_job][_liquidity] = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(_amount);
     userLiquidityIdleAmount[_user][_liquidity] = userLiquidityIdleAmount[_user][_liquidity].add(_amount);
 
-    // withdraw tokens from escrows
-    IKeep3rEscrow(escrow1).withdraw(_liquidity, _amount.div(2));
-    IKeep3rEscrow(escrow2).withdraw(_liquidity, _amount.div(2));
+    // IKeep3rEscrow(escrow1).withdraw(_liquidity, _amount.div(2));
+    // IKeep3rEscrow(escrow2).withdraw(_liquidity, _amount.div(2));
+
+    emit IdleLiquidityRemovedFromJob(_user, _liquidity, _job, _amount);
   }
 
   function _addLiquidityOfUserToJob(

@@ -4,33 +4,61 @@ import _ from 'lodash';
 import { TransactionResponse } from '@ethersproject/abstract-provider';
 import { BigNumber, Contract, ContractFactory, utils } from 'ethers';
 import { ethers } from 'hardhat';
-import { behaviours, constants, bdd, wallet } from '../../utils';
+import { behaviours, constants, bdd, wallet, erc20 } from '../../utils';
 const { when, given, then } = bdd;
 
-describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
+describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
   let owner: SignerWithAddress;
+  let keep3rEscrowContract: ContractFactory;
+  let keep3rEscrow1: Contract;
+  let keep3rEscrow2: Contract;
   let keep3rLiquidityManagerUserJobsLiquditiyHandlerContract: ContractFactory;
   let keep3rLiquidityManagerUserJobsLiquditiyHandler: Contract;
 
   before('Setup accounts and contracts', async () => {
     [owner] = await ethers.getSigners();
+    keep3rEscrowContract = await ethers.getContractFactory('Keep3rEscrow');
     keep3rLiquidityManagerUserJobsLiquditiyHandlerContract = await ethers.getContractFactory(
       'contracts/mock/keep3r-liquidity-manager/Keep3rLiquidityManagerUserJobsLiquidityHandler.sol:Keep3rLiquidityManagerUserJobsLiquidityHandlerMock'
     );
   });
 
   beforeEach('Deploy necessary contracts', async () => {
+    const keep3rV1 = await wallet.generateRandomAddress();
+    keep3rEscrow1 = await keep3rEscrowContract.deploy(keep3rV1);
+    keep3rEscrow2 = await keep3rEscrowContract.deploy(keep3rV1);
     keep3rLiquidityManagerUserJobsLiquditiyHandler = await keep3rLiquidityManagerUserJobsLiquditiyHandlerContract.deploy(
-      await wallet.generateRandomAddress(), // keep3rv1
-      await wallet.generateRandomAddress(), // escrow1
-      await wallet.generateRandomAddress() // escrow2
+      keep3rV1, // keep3rv1
+      keep3rEscrow1.address, // escrow1
+      keep3rEscrow2.address // escrow2
     );
   });
 
   describe('setMinAmount', () => {
     when('setting min amount for liquidity', () => {
-      then('sets new min amount');
-      then('emits event');
+      given(async function () {
+        this.liquidityAddress = await wallet.generateRandomAddress();
+        this.minAmount = utils.parseUnits('100', 'gwei');
+        this.setMinAmountTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
+          this.liquidityAddress,
+          this.minAmount
+        );
+      });
+      then('sets new min amount', async function () {
+        expect(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.liquidityMinAmount(
+            this.liquidityAddress
+          )
+        ).to.equal(this.minAmount);
+      });
+      then('emits event', async function () {
+        await expect(this.setMinAmountTx)
+          .to.emit(
+            keep3rLiquidityManagerUserJobsLiquditiyHandler,
+            'LiquidityMinSet'
+          )
+          .withArgs(this.liquidityAddress, this.minAmount);
+      });
     });
   });
 
@@ -49,16 +77,166 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
   });
 
   describe('removeIdleLiquidityOfUserFromJob', () => {
+    given(async function () {
+      this.liquidityToken = await erc20.deploy({
+        name: 'lp',
+        symbol: 'LP',
+        initialAccount: owner.address,
+        initialAmount: utils.parseEther('1000'),
+      });
+      this.liquidityAddress = this.liquidityToken.address;
+      this.jobAddress = await wallet.generateRandomAddress();
+      this.idleAmount = await utils.parseEther('10');
+      this.minAmount = utils.parseEther('1');
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
+        this.liquidityAddress,
+        this.minAmount
+      );
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(
+        owner.address,
+        this.liquidityAddress,
+        this.idleAmount
+      );
+    });
+    when('removing zero liquidity', () => {
+      given(async function () {
+        this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
+          owner.address,
+          this.liquidityAddress,
+          this.jobAddress,
+          0
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.removeIdleTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::zero-amount'
+        );
+      });
+    });
     when('not enough job cycles have gone through', () => {
-      then('tx is reverted with reason');
+      given(async function () {
+        this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
+          owner.address,
+          this.liquidityAddress,
+          this.jobAddress,
+          1
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.removeIdleTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::liquidity-still-locked'
+        );
+      });
     });
     when('removing more than unlocked', () => {
-      then('tx is reverted with reason');
+      given(async function () {
+        this.unlockedAmount = utils.parseUnits('123', 'gwei');
+        this.jobLiquidityAmount = utils.parseEther('10');
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setJobCycle(
+          this.jobAddress,
+          (
+            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobCycle(
+              owner.address,
+              this.jobAddress
+            )
+          ).add(2)
+        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityAmount(
+          owner.address,
+          this.jobAddress,
+          this.liquidityAddress,
+          this.jobLiquidityAmount.sub(this.unlockedAmount)
+        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityLockedAmount(
+          owner.address,
+          this.jobAddress,
+          this.liquidityAddress,
+          this.jobLiquidityAmount
+        );
+        this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
+          owner.address,
+          this.liquidityAddress,
+          this.jobAddress,
+          this.unlockedAmount.add(10)
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.removeIdleTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::amount-bigger-than-idle-available'
+        );
+      });
     });
     when('removing correct amount and at the correct moment', () => {
-      then('liquidity locked should be reduced');
-      then('idle liquidity should increase');
-      then('emits event with correct args');
+      given(async function () {
+        this.unlockedAmount = utils.parseUnits('123', 'gwei');
+        this.jobLiquidityAmount = utils.parseEther('10');
+        this.amountToWithdraw = this.unlockedAmount.div(2);
+        this.idleAmount = utils.parseEther('1.5');
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(
+          owner.address,
+          this.liquidityAddress,
+          this.idleAmount
+        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setJobCycle(
+          this.jobAddress,
+          (
+            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobCycle(
+              owner.address,
+              this.jobAddress
+            )
+          ).add(2)
+        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityAmount(
+          owner.address,
+          this.jobAddress,
+          this.liquidityAddress,
+          this.jobLiquidityAmount.sub(this.unlockedAmount)
+        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityLockedAmount(
+          owner.address,
+          this.jobAddress,
+          this.liquidityAddress,
+          this.jobLiquidityAmount
+        );
+        await this.liquidityToken.transfer(
+          keep3rEscrow1.address,
+          this.amountToWithdraw.div(2)
+        );
+        await this.liquidityToken.transfer(
+          keep3rEscrow2.address,
+          this.amountToWithdraw.div(2)
+        );
+        this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
+          owner.address,
+          this.liquidityAddress,
+          this.jobAddress,
+          this.amountToWithdraw
+        );
+      });
+      then('liquidity locked should be reduced', async function () {
+        expect(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityLockedAmount(
+            owner.address,
+            this.jobAddress,
+            this.liquidityAddress
+          )
+        ).to.equal(this.jobLiquidityAmount.sub(this.amountToWithdraw));
+      });
+      then('idle liquidity should increase', async function () {
+        expect(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(
+            owner.address,
+            this.liquidityAddress
+          )
+        ).to.equal(this.idleAmount.add(this.amountToWithdraw));
+      });
+      then.skip('pull liquidity from escrows', async function () {});
+      then('emits event with correct args', async function () {
+        await expect(this.removeIdleTx).to.emit(
+          keep3rLiquidityManagerUserJobsLiquditiyHandler,
+          'IdleLiquidityRemovedFromJob'
+        );
+      });
     });
   });
 
