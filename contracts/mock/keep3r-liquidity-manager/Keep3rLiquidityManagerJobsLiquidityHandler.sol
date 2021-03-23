@@ -12,6 +12,14 @@ contract Keep3rLiquidityManagerJobsLiquidityHandlerMock is Keep3rLiquidityManage
     uint256 _index;
   }
 
+  function addJob(address _job) public {
+    _addJob(_job);
+  }
+  
+  function removeJob(address _job) public {
+    _removeJob(_job);
+  }
+
   function addLPToJob(address _job, address _lp) public {
     _addLPToJob(_job, _lp);
   }

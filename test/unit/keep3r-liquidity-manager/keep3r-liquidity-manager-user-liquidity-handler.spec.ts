@@ -70,7 +70,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
         ).to.equal(this.maxLiquidityFee);
       });
       then('emits event', async function () {
-        expect(this.setLiquidityFeeTx)
+        await expect(this.setLiquidityFeeTx)
           .to.emit(
             keep3rLiquidityManagerUserLiquidityHandler,
             'LiquidityFeeSet'
@@ -106,7 +106,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
         ).to.equal(this.feeReceiver);
       });
       then('emits event', async function () {
-        expect(this.setFeeReceiverTx)
+        await expect(this.setFeeReceiverTx)
           .to.emit(keep3rLiquidityManagerUserLiquidityHandler, 'FeeReceiverSet')
           .withArgs(this.feeReceiver);
       });
