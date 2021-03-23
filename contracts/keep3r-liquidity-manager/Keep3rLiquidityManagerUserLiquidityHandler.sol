@@ -9,9 +9,9 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import './Keep3rLiquidityManagerParameters.sol';
 
 interface IKeep3rLiquidityManagerUserLiquidityHandler {
-  event LiquidityFee(uint256 _liquidityFee);
+  event LiquidityFeeSet(uint256 _liquidityFee);
 
-  event LiquidityMin(address _liquidity, uint256 _liquidityFee);
+  event FeeReceiverSet(address _feeReceiver);
 
   event DepositedLiquidity(address indexed _depositor, address _recipient, address _lp, uint256 _amount, uint256 _fee);
 
@@ -26,10 +26,6 @@ interface IKeep3rLiquidityManagerUserLiquidityHandler {
   function userLiquidityTotalAmount(address _user, address _lp) external view returns (uint256 _amount);
 
   function userLiquidityIdleAmount(address _user, address _lp) external view returns (uint256 _amount);
-
-  function setLiquidityFee(uint256 _liquidityFee) external;
-
-  function setFeeReceiver(address _feeReceiver) external;
 
   function depositLiquidity(address _lp, uint256 _amount) external;
 
@@ -46,13 +42,19 @@ interface IKeep3rLiquidityManagerUserLiquidityHandler {
     address _lp,
     uint256 _amount
   ) external;
+
+  function setLiquidityFee(uint256 _liquidityFee) external;
+
+  function setFeeReceiver(address _feeReceiver) external;
 }
 
 abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityManagerParameters, IKeep3rLiquidityManagerUserLiquidityHandler {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
+  // liquidity fee precision
   uint256 public constant PRECISION = 1_000;
+  // max liquidity fee
   uint256 public constant MAX_LIQUIDITY_FEE = PRECISION / 10; // 10%
   // liquidity fee
   uint256 public override liquidityFee;
@@ -67,20 +69,6 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
 
   constructor(address _keep3rV1) public Keep3rLiquidityManagerParameters(_keep3rV1) {
     _setFeeReceiver(msg.sender);
-  }
-
-  // governor
-  function _setLiquidityFee(uint256 _liquidityFee) internal {
-    // TODO better revert messages
-    require(_liquidityFee <= MAX_LIQUIDITY_FEE, 'fee-exceeds-max-liquidity-fee');
-    liquidityFee = _liquidityFee;
-    emit LiquidityFee(_liquidityFee);
-  }
-
-  function _setFeeReceiver(address _feeReceiver) internal {
-    // TODO better revert messages
-    require(_feeReceiver != address(0), 'fee-receiver-not-address-0');
-    feeReceiver = _feeReceiver;
   }
 
   // user
@@ -154,5 +142,18 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
     liquidityTotalAmount[_lp] = liquidityTotalAmount[_lp].sub(_amount);
     userLiquidityTotalAmount[_user][_lp] = userLiquidityTotalAmount[_user][_lp].sub(_amount);
     userLiquidityIdleAmount[_user][_lp] = userLiquidityIdleAmount[_user][_lp].sub(_amount);
+  }
+
+  function _setLiquidityFee(uint256 _liquidityFee) internal {
+    // TODO better revert messages
+    require(_liquidityFee <= MAX_LIQUIDITY_FEE, 'Keep3rLiquidityManager::fee-exceeds-max-liquidity-fee');
+    liquidityFee = _liquidityFee;
+    emit LiquidityFeeSet(_liquidityFee);
+  }
+
+  function _setFeeReceiver(address _feeReceiver) internal {
+    require(_feeReceiver != address(0), 'Keep3rLiquidityManager::zero-address');
+    feeReceiver = _feeReceiver;
+    emit FeeReceiverSet(_feeReceiver);
   }
 }

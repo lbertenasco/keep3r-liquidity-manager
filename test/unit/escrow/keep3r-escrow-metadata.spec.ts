@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Contract, ContractFactory } from 'ethers';
 import { ethers } from 'hardhat';
 
-describe('Keep3rEscrowMetadata', () => {
+describe.skip('Keep3rEscrowMetadata', () => {
   let keep3rEscrowMetadataContract: ContractFactory;
   let keep3rEscrowMetadata: Contract;
 

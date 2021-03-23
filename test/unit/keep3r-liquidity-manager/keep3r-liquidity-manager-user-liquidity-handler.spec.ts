@@ -12,7 +12,7 @@ import {
   utils,
 } from 'ethers';
 import { ethers } from 'hardhat';
-import { constants, bdd, erc20 } from '../../utils';
+import { constants, bdd, erc20, behaviours } from '../../utils';
 const { when, given, then } = bdd;
 
 describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
@@ -39,6 +39,77 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
       symbol: 'LP1',
       initialAccount: owner.address,
       initialAmount: utils.parseEther('0'),
+    });
+  });
+
+  describe('setLiquidityFee', () => {
+    given(async function () {
+      this.maxLiquidityFee = await keep3rLiquidityManagerUserLiquidityHandler.MAX_LIQUIDITY_FEE();
+    });
+    when('liquidity fee is bigger than max liquidity fee', () => {
+      then('tx is reverted with reason', async function () {
+        await expect(
+          keep3rLiquidityManagerUserLiquidityHandler.setLiquidityFee(
+            this.maxLiquidityFee.add(1)
+          )
+        ).to.be.revertedWith(
+          'Keep3rLiquidityManager::fee-exceeds-max-liquidity-fee'
+        );
+      });
+    });
+    when('liquidity fee is smaller than max liquidity fee', () => {
+      given(async function () {
+        this.setLiquidityFeeTx = keep3rLiquidityManagerUserLiquidityHandler.setLiquidityFee(
+          this.maxLiquidityFee
+        );
+        await this.setLiquidityFeeTx;
+      });
+      then('sets new liquidity fee', async function () {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityFee()
+        ).to.equal(this.maxLiquidityFee);
+      });
+      then('emits event', async function () {
+        await expect(this.setLiquidityFeeTx)
+          .to.emit(
+            keep3rLiquidityManagerUserLiquidityHandler,
+            'LiquidityFeeSet'
+          )
+          .withArgs(this.maxLiquidityFee);
+      });
+    });
+  });
+
+  describe('setFeeReceiver', () => {
+    given(function () {
+      this.feeReceiver = bob.address;
+    });
+    when('setting fee receiver to zero address', () => {
+      then('tx is reverted with reason', async function () {
+        await behaviours.txShouldRevertWithZeroAddress({
+          contract: keep3rLiquidityManagerUserLiquidityHandler,
+          func: 'setFeeReceiver',
+          args: [constants.ZERO_ADDRESS],
+        });
+      });
+    });
+    when('setting fee receiver to valid address', () => {
+      given(async function () {
+        this.setFeeReceiverTx = keep3rLiquidityManagerUserLiquidityHandler.setFeeReceiver(
+          this.feeReceiver
+        );
+        await this.setFeeReceiverTx;
+      });
+      then('sets new fee receiver', async function () {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.feeReceiver()
+        ).to.equal(this.feeReceiver);
+      });
+      then('emits event', async function () {
+        await expect(this.setFeeReceiverTx)
+          .to.emit(keep3rLiquidityManagerUserLiquidityHandler, 'FeeReceiverSet')
+          .withArgs(this.feeReceiver);
+      });
     });
   });
 
@@ -91,14 +162,14 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           liquidityToAdd
         );
       });
-      then('total liquidity amount decreases', async () => {
+      then('total liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
           )
         ).to.equal(liquidityToAdd);
       });
-      then('total user liquidity amount decreases', async () => {
+      then('total user liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
             alice.address,
@@ -106,7 +177,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           )
         ).to.equal(liquidityToAdd);
       });
-      then('total user idle liquidity amount decreases', async () => {
+      then('total user idle liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
             alice.address,
@@ -243,7 +314,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
         });
       }
     );
-    when('contract is approved to move funds', () => {
+    when('there is no fee', () => {
       given(async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
@@ -284,16 +355,16 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             keep3rLiquidityManagerUserLiquidityHandler,
             'DepositedLiquidity'
           )
-          .withArgs(owner.address, alice.address, lp.address, fundsToMove);
+          .withArgs(owner.address, alice.address, lp.address, fundsToMove, 0);
       });
-      then('total liquidity amount decreases', async () => {
+      then('total liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
           )
         ).to.equal(fundsToMove);
       });
-      then('total user liquidity amount decreases', async () => {
+      then('total user liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
             alice.address,
@@ -301,7 +372,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           )
         ).to.equal(fundsToMove);
       });
-      then('total user idle liquidity amount decreases', async () => {
+      then('total user idle liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
             alice.address,
@@ -309,6 +380,99 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           )
         ).to.equal(fundsToMove);
       });
+    });
+    when('there is fee', () => {
+      given(async function () {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            alice.address,
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            alice.address,
+            lp.address
+          )
+        ).to.equal(0);
+        this.feeReceiver = bob.address;
+        this.liquidityFee = BigNumber.from('100');
+        this.fee = fundsToMove
+          .mul(this.liquidityFee)
+          .div(await keep3rLiquidityManagerUserLiquidityHandler.PRECISION());
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityFee(
+          this.liquidityFee
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setFeeReceiver(
+          this.feeReceiver
+        );
+        await lp.mint(owner.address, fundsToMove);
+        await lp.approve(
+          keep3rLiquidityManagerUserLiquidityHandler.address,
+          fundsToMove
+        );
+        depositTxResponse = await keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
+          owner.address,
+          alice.address,
+          lp.address,
+          fundsToMove
+        );
+      });
+
+      then('depositor funds are moved', async function () {
+        expect(await lp.balanceOf(owner.address)).to.equal(0);
+      });
+      then('event is emitted', async function () {
+        await expect(depositTxResponse)
+          .to.emit(
+            keep3rLiquidityManagerUserLiquidityHandler,
+            'DepositedLiquidity'
+          )
+          .withArgs(
+            owner.address,
+            alice.address,
+            lp.address,
+            fundsToMove.sub(this.fee),
+            this.fee
+          );
+      });
+      then(
+        'total liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+      then(
+        'total user liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+              alice.address,
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+      then(
+        'total user idle liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+              alice.address,
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
     });
   });
 
@@ -353,7 +517,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
         });
       }
     );
-    when('contract is approved to move funds', () => {
+    when('there is no fee', () => {
       given(async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
@@ -393,16 +557,16 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             keep3rLiquidityManagerUserLiquidityHandler,
             'DepositedLiquidity'
           )
-          .withArgs(owner.address, alice.address, lp.address, fundsToMove);
+          .withArgs(owner.address, alice.address, lp.address, fundsToMove, 0);
       });
-      then('total liquidity amount decreases', async () => {
+      then('total liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
           )
         ).to.equal(fundsToMove);
       });
-      then('total user liquidity amount decreases', async () => {
+      then('total user liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
             alice.address,
@@ -410,7 +574,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           )
         ).to.equal(fundsToMove);
       });
-      then('total user idle liquidity amount decreases', async () => {
+      then('total user idle liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
             alice.address,
@@ -419,9 +583,101 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
         ).to.equal(fundsToMove);
       });
     });
+    when('there is fee', () => {
+      given(async function () {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            alice.address,
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            alice.address,
+            lp.address
+          )
+        ).to.equal(0);
+        this.feeReceiver = bob.address;
+        this.liquidityFee = BigNumber.from('100');
+        this.fee = fundsToMove
+          .mul(this.liquidityFee)
+          .div(await keep3rLiquidityManagerUserLiquidityHandler.PRECISION());
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityFee(
+          this.liquidityFee
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setFeeReceiver(
+          this.feeReceiver
+        );
+        await lp.mint(owner.address, fundsToMove);
+        await lp.approve(
+          keep3rLiquidityManagerUserLiquidityHandler.address,
+          fundsToMove
+        );
+        depositTxResponse = await keep3rLiquidityManagerUserLiquidityHandler.depositLiquidityTo(
+          alice.address,
+          lp.address,
+          fundsToMove
+        );
+      });
+
+      then('depositor funds are moved', async function () {
+        expect(await lp.balanceOf(owner.address)).to.equal(0);
+      });
+      then('event is emitted', async function () {
+        await expect(depositTxResponse)
+          .to.emit(
+            keep3rLiquidityManagerUserLiquidityHandler,
+            'DepositedLiquidity'
+          )
+          .withArgs(
+            owner.address,
+            alice.address,
+            lp.address,
+            fundsToMove.sub(this.fee),
+            this.fee
+          );
+      });
+      then(
+        'total liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+      then(
+        'total user liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+              alice.address,
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+      then(
+        'total user idle liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+              alice.address,
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+    });
   });
 
-  describe('depositLiquidityTo', () => {
+  describe('depositLiquidity', () => {
     const fundsToMove = BigNumber.from('1000');
     let depositTxResponse: TransactionResponse;
 
@@ -460,7 +716,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
         });
       }
     );
-    when('contract is approved to move funds', () => {
+    when('there is no fee', () => {
       given(async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
@@ -499,16 +755,16 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
             keep3rLiquidityManagerUserLiquidityHandler,
             'DepositedLiquidity'
           )
-          .withArgs(owner.address, owner.address, lp.address, fundsToMove);
+          .withArgs(owner.address, owner.address, lp.address, fundsToMove, 0);
       });
-      then('total liquidity amount decreases', async () => {
+      then('total liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
             lp.address
           )
         ).to.equal(fundsToMove);
       });
-      then('total user liquidity amount decreases', async () => {
+      then('total user liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
             owner.address,
@@ -516,7 +772,7 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           )
         ).to.equal(fundsToMove);
       });
-      then('total user idle liquidity amount decreases', async () => {
+      then('total user idle liquidity amount increases', async () => {
         expect(
           await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
             owner.address,
@@ -524,6 +780,97 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
           )
         ).to.equal(fundsToMove);
       });
+    });
+    when('there is fee', () => {
+      given(async function () {
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(0);
+        expect(
+          await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+            owner.address,
+            lp.address
+          )
+        ).to.equal(0);
+        this.feeReceiver = bob.address;
+        this.liquidityFee = BigNumber.from('100');
+        this.fee = fundsToMove
+          .mul(this.liquidityFee)
+          .div(await keep3rLiquidityManagerUserLiquidityHandler.PRECISION());
+        await keep3rLiquidityManagerUserLiquidityHandler.setLiquidityFee(
+          this.liquidityFee
+        );
+        await keep3rLiquidityManagerUserLiquidityHandler.setFeeReceiver(
+          this.feeReceiver
+        );
+        await lp.mint(owner.address, fundsToMove);
+        await lp.approve(
+          keep3rLiquidityManagerUserLiquidityHandler.address,
+          fundsToMove
+        );
+        depositTxResponse = await keep3rLiquidityManagerUserLiquidityHandler.depositLiquidity(
+          lp.address,
+          fundsToMove
+        );
+      });
+
+      then('depositor funds are moved', async function () {
+        expect(await lp.balanceOf(owner.address)).to.equal(0);
+      });
+      then('event is emitted', async function () {
+        await expect(depositTxResponse)
+          .to.emit(
+            keep3rLiquidityManagerUserLiquidityHandler,
+            'DepositedLiquidity'
+          )
+          .withArgs(
+            owner.address,
+            owner.address,
+            lp.address,
+            fundsToMove.sub(this.fee),
+            this.fee
+          );
+      });
+      then(
+        'total liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.liquidityTotalAmount(
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+      then(
+        'total user liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityTotalAmount(
+              owner.address,
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
+      then(
+        'total user idle liquidity amount increases subtracting fee',
+        async function () {
+          expect(
+            await keep3rLiquidityManagerUserLiquidityHandler.userLiquidityIdleAmount(
+              owner.address,
+              lp.address
+            )
+          ).to.equal(fundsToMove.sub(this.fee));
+        }
+      );
     });
   });
 

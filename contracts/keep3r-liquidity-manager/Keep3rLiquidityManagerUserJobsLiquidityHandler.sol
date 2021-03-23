@@ -10,6 +10,8 @@ import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
 import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
+  event LiquidityMinSet(address _liquidity, uint256 _minAmount);
+
   function liquidityMinAmount(address _liquidity) external view returns (uint256 _minAmount);
 
   function userJobLiquidityAmount(
@@ -70,7 +72,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
 
   function _setMinAmount(address _liquidity, uint256 _minAmount) internal {
     liquidityMinAmount[_liquidity] = _minAmount;
-    emit LiquidityMin(_liquidity, _minAmount);
+    emit LiquidityMinSet(_liquidity, _minAmount);
   }
 
   function setJobLiquidityAmount(

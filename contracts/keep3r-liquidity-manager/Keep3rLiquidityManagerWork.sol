@@ -43,7 +43,7 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
 
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {
-    require(jobLiquidities[_job].length > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
+    require(_jobLiquidities[_job].length() > 0, 'Keep3rLiquidityManager::getNextAction:job-has-no-liquidity');
 
     Steps _escrow1Step = jobEscrowStep[_job][escrow1];
     Steps _escrow2Step = jobEscrowStep[_job][escrow2];
@@ -88,8 +88,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
 
   function _jobHasDesiredLiquidities(address _job) internal view returns (bool) {
     // search for desired liquidity > 0 on all job liquidities
-    for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-      if (jobLiquidityDesiredAmount[_job][jobLiquidities[_job][i]] > 0) {
+    for (uint256 i = 0; i < _jobLiquidities[_job].length(); i++) {
+      if (jobLiquidityDesiredAmount[_job][_jobLiquidities[_job].at(i)] > 0) {
         return true;
       }
     }
@@ -148,8 +148,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
   ) internal {
     // AddLiquidityToJob
     if (_action == Actions.AddLiquidityToJob) {
-      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        address _liquidity = jobLiquidities[_job][i];
+      for (uint256 i = 0; i < _jobLiquidities[_job].length(); i++) {
+        address _liquidity = _jobLiquidities[_job].at(i);
         uint256 _escrowAmount = jobLiquidityDesiredAmount[_job][_liquidity].div(2);
         IERC20(_liquidity).approve(_escrow, _escrowAmount);
         IKeep3rEscrow(_escrow).deposit(_liquidity, _escrowAmount);
@@ -163,8 +163,8 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
       address _otherEscrow = _escrow == escrow1 ? escrow2 : escrow1;
 
       // ALWAYS FIRST: Should try to unbondLiquidityFromJob from _otherEscrow
-      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        address _liquidity = jobLiquidities[_job][i];
+      for (uint256 i = 0; i < _jobLiquidities[_job].length(); i++) {
+        address _liquidity = _jobLiquidities[_job].at(i);
         uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_otherEscrow, _liquidity, _job);
         if (_liquidityProvided > 0) {
           _unbondLiquidityFromJob(_otherEscrow, _liquidity, _job, _liquidityProvided);
@@ -173,16 +173,16 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
         }
       }
       // Run applyCreditToJob
-      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        _applyCreditToJob(_escrow, jobLiquidities[_job][i], _job);
+      for (uint256 i = 0; i < _jobLiquidities[_job].length(); i++) {
+        _applyCreditToJob(_escrow, _jobLiquidities[_job].at(i), _job);
         jobEscrowStep[_job][_escrow] = Steps.CreditApplied;
         jobEscrowTimestamp[_job][_escrow] = block.timestamp;
       }
 
       // UnbondLiquidityFromJob
     } else if (_action == Actions.UnbondLiquidityFromJob) {
-      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        address _liquidity = jobLiquidities[_job][i];
+      for (uint256 i = 0; i < _jobLiquidities[_job].length(); i++) {
+        address _liquidity = _jobLiquidities[_job].at(i);
 
         uint256 _liquidityProvided = IKeep3rV1(keep3rV1).liquidityProvided(_escrow, _liquidity, _job);
         if (_liquidityProvided > 0) {
@@ -194,9 +194,9 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
 
       // RemoveLiquidityFromJob
     } else if (_action == Actions.RemoveLiquidityFromJob) {
-      address[] memory _LPsToRemove = new address[](jobLiquidities[_job].length);
-      for (uint256 i = 0; i < jobLiquidities[_job].length; i++) {
-        address _liquidity = jobLiquidities[_job][i];
+      address[] memory _LPsToRemove = new address[](_jobLiquidities[_job].length());
+      for (uint256 i = 0; i < _jobLiquidities[_job].length(); i++) {
+        address _liquidity = _jobLiquidities[_job].at(i);
         // remove liquidity
         uint256 _amount = _removeLiquidityFromJob(_escrow, _liquidity, _job);
         jobEscrowStep[_job][_escrow] = Steps.NotStarted;

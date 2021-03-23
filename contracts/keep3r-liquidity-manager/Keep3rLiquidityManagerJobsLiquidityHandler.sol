@@ -7,13 +7,12 @@ import '@openzeppelin/contracts/utils/EnumerableSet.sol';
 
 interface IKeep3rLiquidityManagerJobsLiquidityHandler {
   event JobAdded(address _job);
+
   event JobRemoved(address _job);
 
-  function jobs() external view returns (address[] memory _jobs);
+  function jobs() external view returns (address[] memory _jobsList);
 
-  function jobLiquidities(address _job, uint256 _index) external view returns (address _liquidity);
-
-  function jobLiquidityIndex(address _job, address _liquidity) external view returns (uint256 _index);
+  function jobLiquidities(address _job) external view returns (address[] memory _liquiditiesList);
 
   function jobLiquidityDesiredAmount(address _job, address _liquidity) external view returns (uint256 _amount);
 
@@ -22,10 +21,6 @@ interface IKeep3rLiquidityManagerJobsLiquidityHandler {
     address _liquidity,
     address _escrow
   ) external view returns (uint256 _amount);
-
-  function getJobLiquidities(address _job) external view returns (address[] memory);
-
-  function jobHasLiquidity(address _job, address _liquidity) external view returns (bool);
 }
 
 abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidityManagerJobsLiquidityHandler {
@@ -35,9 +30,7 @@ abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidity
   // job[]
   EnumerableSet.AddressSet internal _jobs;
   // job => lp[]
-  mapping(address => address[]) public override jobLiquidities;
-  // job => lp => index
-  mapping(address => mapping(address => uint256)) public override jobLiquidityIndex;
+  mapping(address => EnumerableSet.AddressSet) _jobLiquidities;
   // job => lp => amount
   mapping(address => mapping(address => uint256)) public override jobLiquidityDesiredAmount;
   // job => lp => escrow => amount
@@ -50,44 +43,28 @@ abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidity
     }
   }
 
-  function getJobLiquidities(address _job) public view override returns (address[] memory) {
-    return jobLiquidities[_job];
-  }
-
-  function jobHasLiquidity(address _job, address _liquidity) public view override returns (bool) {
-    return
-      jobLiquidityIndex[_job][_liquidity] != 0 ||
-      // TODO Rework?: This complex check can be avoided by using index as length.
-      (jobLiquidityIndex[_job][_liquidity] == 0 && jobLiquidities[_job].length > 0 && jobLiquidities[_job][0] == _liquidity);
+  function jobLiquidities(address _job) public view override returns (address[] memory _liquiditiesList) {
+    _liquiditiesList = new address[](_jobLiquidities[_job].length());
+    for (uint256 i; i < _jobLiquidities[_job].length(); i++) {
+      _liquiditiesList[i] = _jobLiquidities[_job].at(i);
+    }
   }
 
   function _addJob(address _job) internal {
-    _jobs.add(_job);
-    emit JobAdded(_job);
+    if (_jobs.add(_job)) emit JobAdded(_job);
   }
 
   function _removeJob(address _job) internal {
-    _jobs.remove(_job);
-    emit JobRemoved(_job);
+    if (_jobs.remove(_job)) emit JobRemoved(_job);
   }
 
   function _addLPToJob(address _job, address _liquidity) internal {
-    if (jobHasLiquidity(_job, _liquidity)) return;
-    jobLiquidities[_job].push(_liquidity);
-    jobLiquidityIndex[_job][_liquidity] = jobLiquidities[_job].length.sub(1);
-    if (jobLiquidities[_job].length == 1) _addJob(_job);
+    _jobLiquidities[_job].add(_liquidity);
+    if (_jobLiquidities[_job].length() == 1) _addJob(_job);
   }
 
   function _removeLPFromJob(address _job, address _liquidity) internal {
-    if (!jobHasLiquidity(_job, _liquidity)) return;
-    uint256 _index = jobLiquidityIndex[_job][_liquidity];
-    uint256 _lastIndex = jobLiquidities[_job].length.sub(1);
-    if (_index < _lastIndex) {
-      jobLiquidities[_job][_index] = jobLiquidities[_job][_lastIndex];
-      jobLiquidityIndex[_job][jobLiquidities[_job][_index]] = _index;
-    }
-    delete jobLiquidityIndex[_job][_liquidity];
-    jobLiquidities[_job].pop();
-    if (jobLiquidities[_job].length == 0) _removeJob(_job);
+    _jobLiquidities[_job].remove(_liquidity);
+    if (_jobLiquidities[_job].length() == 0) _removeJob(_job);
   }
 }
