@@ -102,7 +102,7 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
     address _lp,
     uint256 _amount
   ) internal {
-    // TODO Validate liquidity on Keep3r
+    require(IKeep3rV1(keep3rV1).liquidityAccepted(_lp), 'Keep3rLiquidityManager::liquidity-not-accepted-on-keep3r');
     IERC20(_lp).safeTransferFrom(_liquidityDepositor, address(this), _amount);
     uint256 _fee = _amount.mul(liquidityFee).div(PRECISION);
     if (_fee > 0) IERC20(_lp).safeTransfer(feeReceiver, _fee);

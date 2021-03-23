@@ -28,7 +28,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
     keep3rEscrow1 = await keep3rEscrowContract.deploy(keep3rV1);
     keep3rEscrow2 = await keep3rEscrowContract.deploy(keep3rV1);
     keep3rLiquidityManagerUserJobsLiquditiyHandler = await keep3rLiquidityManagerUserJobsLiquditiyHandlerContract.deploy(
-      keep3rV1, // keep3rv1
+      keep3rV1, // keep3rV1
       keep3rEscrow1.address, // escrow1
       keep3rEscrow2.address // escrow2
     );

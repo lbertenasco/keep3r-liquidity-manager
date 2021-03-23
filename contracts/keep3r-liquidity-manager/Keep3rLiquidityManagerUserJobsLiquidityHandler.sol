@@ -139,7 +139,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
-    // TODO validate _job on keep3r
+    require(IKeep3rV1(keep3rV1).jobs(_job), 'Keep3rLiquidityManager::job-not-on-keep3r');
     require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
     require(_amount <= userLiquidityIdleAmount[_user][_liquidity], 'Keep3rLiquidityManager::no-idle-liquidity-available');
     require(liquidityMinAmount[_liquidity] != 0, 'Keep3rLiquidityManager::liquidity-min-not-set');

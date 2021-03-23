@@ -60,12 +60,8 @@ contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3
     address _token,
     uint256 _amount
   ) external override onlyGovernor {
-    // TODO Protect _liquidity tokens with liquidityTotalAmount[_liquidity]
-    /*
-      uinst256 _idleBalance = IERC20(_token).balanceOf(address(this));
-      require(amount <= liquidityIdleTotalAmount[_liquidity].sub(_idleBalance), 'amount-greater-than-extra-idle-liquidity');
-      _sendDust(_to, _token, _amount);
-       */
+    require(liquidityTotalAmount[_token] == 0, 'Keep3rLiquidityManager::sendDust:token-is-liquidity');
+    _sendDust(_to, _token, _amount);
   }
 
   // Escrow Liquidity
