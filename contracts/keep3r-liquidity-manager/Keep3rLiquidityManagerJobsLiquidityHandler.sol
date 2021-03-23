@@ -24,7 +24,7 @@ abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidity
   // job[]
   EnumerableSet.AddressSet internal _jobs;
   // job => lp[]
-  mapping(address => EnumerableSet.AddressSet) _jobLiquidities;
+  mapping(address => EnumerableSet.AddressSet) internal _jobLiquidities;
   // job => lp => amount
   mapping(address => mapping(address => uint256)) public override jobLiquidityDesiredAmount;
 
