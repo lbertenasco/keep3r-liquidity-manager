@@ -130,9 +130,6 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     userJobLiquidityLockedAmount[_user][_job][_liquidity] = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(_amount);
     userLiquidityIdleAmount[_user][_liquidity] = userLiquidityIdleAmount[_user][_liquidity].add(_amount);
 
-    // IKeep3rEscrow(escrow1).withdraw(_liquidity, _amount.div(2));
-    // IKeep3rEscrow(escrow2).withdraw(_liquidity, _amount.div(2));
-
     emit IdleLiquidityRemovedFromJob(_user, _liquidity, _job, _amount);
   }
 
