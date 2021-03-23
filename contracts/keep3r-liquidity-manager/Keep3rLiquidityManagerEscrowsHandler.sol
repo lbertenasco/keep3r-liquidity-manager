@@ -57,33 +57,23 @@ interface IKeep3rLiquidityManagerEscrowsHandler {
 }
 
 abstract contract Keep3rLiquidityManagerEscrowsHandler is IKeep3rLiquidityManagerEscrowsHandler {
-  address public override escrow1;
-  address public override escrow2;
+  address public immutable override escrow1;
+  address public immutable override escrow2;
 
   constructor(address _escrow1, address _escrow2) public {
-    _setEscrow1(_escrow1);
-    _setEscrow2(_escrow2);
+    require(_escrow1 != address(0), 'Keep3rLiquidityManager::zero-address');
+    require(_escrow2 != address(0), 'Keep3rLiquidityManager::zero-address');
+    escrow1 = _escrow1;
+    escrow2 = _escrow2;
   }
 
   modifier _assertIsValidEscrow(address _escrow) {
-    require(!isValidEscrow(_escrow), 'Keep3rLiquidityManager::invalid-escrow');
+    require(isValidEscrow(_escrow), 'Keep3rLiquidityManager::invalid-escrow');
     _;
   }
 
   function isValidEscrow(address _escrow) public view override returns (bool) {
-    return address(_escrow) == address(escrow1) || address(_escrow) == address(escrow2);
-  }
-
-  function _setEscrow1(address _escrow1) internal {
-    require(address(_escrow1) != address(0), 'Keep3rLiquidityManager::zero-address');
-    escrow1 = _escrow1;
-    emit Escrow1Set(_escrow1);
-  }
-
-  function _setEscrow2(address _escrow2) internal {
-    require(address(_escrow2) != address(0), 'Keep3rLiquidityManager::zero-address');
-    escrow2 = _escrow2;
-    emit Escrow2Set(_escrow2);
+    return _escrow == escrow1 || _escrow == escrow2;
   }
 
   function _addLiquidityToJob(

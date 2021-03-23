@@ -91,6 +91,13 @@ describe('Keep3rLiquidityManager', () => {
       escrow1.address,
       escrow2.address
     );
+
+    // Set escrow governance
+    await escrow1.setPendingGovernor(keep3rLiquidityManager.address);
+    await escrow2.setPendingGovernor(keep3rLiquidityManager.address);
+    await keep3rLiquidityManager.acceptGovernorOnEscrow(escrow1.address);
+    await keep3rLiquidityManager.acceptGovernorOnEscrow(escrow2.address);
+
     keep3rLiquidityManagerJob = await Keep3rLiquidityManagerJob.deploy(
       keep3rLiquidityManager.address,
       keep3r.address,
@@ -171,6 +178,37 @@ describe('Keep3rLiquidityManager', () => {
             keep3rLiquidityManagerJob.address
           )
         ).to.be.true;
+      });
+    });
+  });
+
+  describe('work', () => {
+    beforeEach(async () => {
+      await keep3rLiquidityManager.setMinAmount(lp.address, e18);
+      await addLiquidityToJob(keep3rLiquidityManagerJob.address);
+    });
+    context('when no setJob', () => {
+      it('revert', async () => {
+        await expect(
+          keep3rLiquidityManagerJob
+            .connect(keeper)
+            .callStatic.work(keep3rLiquidityManagerJob.address)
+        ).to.be.revertedWith(
+          'Keep3rLiquidityManagerJobHandler::onlyJob:msg-sender-is-not-the-correct-job'
+        );
+      });
+    });
+
+    context('with setJob', () => {
+      beforeEach(async () => {
+        await keep3rLiquidityManager.setJob(keep3rLiquidityManagerJob.address);
+      });
+      it('succeeds', async () => {
+        expect(
+          await keep3rLiquidityManagerJob
+            .connect(keeper)
+            .callStatic.work(keep3rLiquidityManagerJob.address)
+        ).to.be.gt(0);
       });
     });
   });

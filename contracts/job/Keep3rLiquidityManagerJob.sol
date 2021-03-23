@@ -14,7 +14,7 @@ contract Keep3rLiquidityManagerJob is UtilsReady, Keep3r, IKeep3rLiquidityManage
 
   uint256 public constant PRECISION = 1_000;
   uint256 public constant MAX_REWARD_MULTIPLIER = 1 * PRECISION; // 1x max reward multiplier
-  uint256 public override rewardMultiplier;
+  uint256 public override rewardMultiplier = MAX_REWARD_MULTIPLIER;
 
   address public override keep3rLiquidityManager;
 

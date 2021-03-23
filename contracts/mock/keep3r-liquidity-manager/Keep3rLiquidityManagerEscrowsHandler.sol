@@ -15,14 +15,6 @@ contract Keep3rLiquidityManagerEscrowsHandlerMock is Keep3rLiquidityManagerEscro
 
   function assertIsValidEscrow(address _escrow) public _assertIsValidEscrow(_escrow) { }
 
-  function setEscrow1(address _escrow1) public {
-    _setEscrow1(_escrow1);
-  }
-
-  function setEscrow2(address _escrow2) public {
-    _setEscrow2(_escrow2);
-  }
-
   function addLiquidityToJob(
     address _escrow,
     address _liquidity,
