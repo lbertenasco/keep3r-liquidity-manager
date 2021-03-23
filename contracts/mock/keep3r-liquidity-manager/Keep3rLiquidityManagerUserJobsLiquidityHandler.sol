@@ -27,37 +27,70 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is
 
   function setLiquidityToJobOfUser(
     address _user,
+    address _liquidity,
     address _job,
-    address _lp,
     uint256 _amount
   ) public {
-    _setLiquidityToJobOfUser(_user, _job, _lp, _amount);
+    _setLiquidityToJobOfUser(_user, _liquidity, _job, _amount);
   }
 
   function removeIdleLiquidityOfUserFromJob(
     address _user,
+    address _liquidity,
     address _job,
-    address _lp,
     uint256 _amount
   ) public {
-    _removeIdleLiquidityOfUserFromJob(_user, _job, _lp, _amount);
+    _removeIdleLiquidityOfUserFromJob(_user, _liquidity, _job, _amount);
   }
 
   function addLiquidityOfUserToJob(
     address _user,
-    address _lp,
+    address _liquidity,
     address _job,
     uint256 _amount
-  ) internal {
-    _addLiquidityOfUserToJob(_user, _job, _lp, _amount);
+  ) public {
+    _addLiquidityOfUserToJob(_user, _liquidity, _job, _amount);
   }
 
   function subLiquidityOfUserFromJob(
     address _user,
-    address _lp,
+    address _liquidity,
     address _job,
     uint256 _amount
-  ) internal {
-    _subLiquidityOfUserFromJob(_user, _job, _lp, _amount);
+  ) public {
+    _subLiquidityOfUserFromJob(_user, _liquidity, _job, _amount);
+  }
+
+  function setUserJobLiquidityAmount(
+    address _user,
+    address _job,
+    address _liquidity,
+    uint256 _amount
+  ) public {
+    userJobLiquidityAmount[_user][_job][_liquidity] = _amount;
+  }
+
+  function setUserJobLiquidityLockedAmount(
+    address _user,
+    address _job,
+    address _liquidity,
+    uint256 _amount
+  ) public {
+    userJobLiquidityLockedAmount[_user][_job][_liquidity] = _amount;
+  }
+
+  function setUserJobCycle(
+    address _user,
+    address _job,
+    uint256 _cycle
+  ) public {
+    userJobCycle[_user][_job] = _cycle;
+  }
+
+  function setJobCycle(
+    address _job,
+    uint256 _cycle
+  ) public {
+    jobCycle[_job] = _cycle;
   }
 }

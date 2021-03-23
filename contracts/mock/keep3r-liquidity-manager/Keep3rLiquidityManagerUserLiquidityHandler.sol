@@ -19,58 +19,58 @@ contract Keep3rLiquidityManagerUserLiquidityHandlerMock is
   function internalDepositLiquidity(
     address _liquidityDepositor,
     address _liquidityRecipient,
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    _depositLiquidity(_liquidityDepositor, _liquidityRecipient, _lp, _amount);
+    _depositLiquidity(_liquidityDepositor, _liquidityRecipient, _liquidity, _amount);
   }
 
   function internalWithdrawLiquidity(
     address _liquidityWithdrawer,
     address _liquidityRecipient,
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    _withdrawLiquidity(_liquidityWithdrawer, _liquidityRecipient, _lp, _amount);
+    _withdrawLiquidity(_liquidityWithdrawer, _liquidityRecipient, _liquidity, _amount);
   }
 
   function addLiquidity(
     address _user,
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    _addLiquidity(_user, _lp, _amount); 
+    _addLiquidity(_user, _liquidity, _amount); 
   }
 
   function subLiquidity(
     address _user,
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    _subLiquidity(_user, _lp, _amount);
+    _subLiquidity(_user, _liquidity, _amount);
   }
 
   function setLiquidityTotalAmount(
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    liquidityTotalAmount[_lp] = _amount;
+    liquidityTotalAmount[_liquidity] = _amount;
   }
 
   function setUserLiquidityTotalAmount(
     address _user,
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    userLiquidityTotalAmount[_user][_lp] = _amount;
+    userLiquidityTotalAmount[_user][_liquidity] = _amount;
   }
 
   function setUserLiquidityIdleAmount(
     address _user,
-    address _lp,
+    address _liquidity,
     uint256 _amount
   ) public {
-    userLiquidityIdleAmount[_user][_lp] = _amount;
+    userLiquidityIdleAmount[_user][_liquidity] = _amount;
   }
 
   function setLiquidityFee(uint256 _liquidityFee) external override {
