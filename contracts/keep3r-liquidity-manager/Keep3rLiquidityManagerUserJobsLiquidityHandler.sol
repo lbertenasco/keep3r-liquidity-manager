@@ -113,17 +113,17 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     uint256 _amount
   ) internal {
     _amount = _amount.div(2).mul(2); // removes potential decimal dust
-    require(jobCycle[_job] >= userJobCycle[_user][_job].add(2), 'Keep3rLiquidityManager::liquidity-still-locked');
+    require(
+      jobCycle[_job] >= userJobCycle[_user][_job].add(2) || // wait for full cycle
+        _jobLiquidities[_job].length() == 0, // or removes if 1 cycle was enough to remove all liquidity
+      'Keep3rLiquidityManager::liquidity-still-locked'
+    );
 
     uint256 _idleAmount = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(userJobLiquidityAmount[_user][_job][_liquidity]);
     require(_amount <= _idleAmount, 'Keep3rLiquidityManager::amount-bigger-than-idle-available');
 
     userJobLiquidityLockedAmount[_user][_job][_liquidity] = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(_amount);
     userLiquidityIdleAmount[_user][_liquidity] = userLiquidityIdleAmount[_user][_liquidity].add(_amount);
-
-    // withdraw tokens from escrows
-    IKeep3rEscrow(escrow1).withdraw(_liquidity, _amount.div(2));
-    IKeep3rEscrow(escrow2).withdraw(_liquidity, _amount.div(2));
   }
 
   function _addLiquidityOfUserToJob(
