@@ -15,12 +15,6 @@ interface IKeep3rLiquidityManagerJobsLiquidityHandler {
   function jobLiquidities(address _job) external view returns (address[] memory _liquiditiesList);
 
   function jobLiquidityDesiredAmount(address _job, address _liquidity) external view returns (uint256 _amount);
-
-  function jobLiquidityEscrowAmount(
-    address _job,
-    address _liquidity,
-    address _escrow
-  ) external view returns (uint256 _amount);
 }
 
 abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidityManagerJobsLiquidityHandler {
@@ -33,8 +27,6 @@ abstract contract Keep3rLiquidityManagerJobsLiquidityHandler is IKeep3rLiquidity
   mapping(address => EnumerableSet.AddressSet) _jobLiquidities;
   // job => lp => amount
   mapping(address => mapping(address => uint256)) public override jobLiquidityDesiredAmount;
-  // job => lp => escrow => amount
-  mapping(address => mapping(address => mapping(address => uint256))) public override jobLiquidityEscrowAmount;
 
   function jobs() public view override returns (address[] memory _jobsList) {
     _jobsList = new address[](_jobs.length());
