@@ -264,6 +264,11 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       this.liquidityAddress = await wallet.generateRandomAddress();
       this.jobAddress = await wallet.generateRandomAddress();
       this.jobLiquidityAmount = utils.parseEther('10');
+      this.minAmount = utils.parseEther('1');
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
+        this.liquidityAddress,
+        this.minAmount
+      );
       await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityAmount(
         owner.address,
         this.jobAddress,
@@ -279,7 +284,6 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
           this.jobAddress,
           this.jobLiquidityAmount.add(1)
         );
-        await this.subLiquidityTx;
       });
       then('tx is reverted with reason', async function () {
         await expect(this.subLiquidityTx).to.be.revertedWith(
@@ -288,12 +292,25 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       });
     });
     when('reducing liquidity to less than minimum', () => {
-      then('tx is reverted with reason');
+      given(async function () {
+        this.subLiquidityTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.subLiquidityOfUserFromJob(
+          owner.address,
+          this.liquidityAddress,
+          this.jobAddress,
+          this.jobLiquidityAmount.sub(this.minAmount).add(1)
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.subLiquidityTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::locked-amount-not-enough'
+        );
+      });
     });
-    when('reducing available liquidity', () => {
+    when('reducing liquidity of job from user', () => {
       then('job liquidity amount of user is reduced');
       then('locked job liquidity amount of user is not modified');
       then('user job liquidity amount is reduced');
     });
+    when('setting liquidity of job to zero', () => {});
   });
 });
