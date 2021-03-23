@@ -23,6 +23,13 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
     keep3rLiquidityManagerUserJobsLiquditiyHandler = await keep3rLiquidityManagerUserJobsLiquditiyHandlerContract.deploy();
   });
 
+  describe('setMinAmount', () => {
+    when('setting min amount for liquidity', () => {
+      then('sets new min amount');
+      then('emits event');
+    });
+  });
+
   describe('setLiquidityToJobOfUser', () => {
     when('setting same amount than current one', () => {
       then('tx is reverted with reason');

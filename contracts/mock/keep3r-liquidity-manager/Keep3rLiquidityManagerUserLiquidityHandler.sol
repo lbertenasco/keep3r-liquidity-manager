@@ -14,7 +14,7 @@ contract Keep3rLiquidityManagerUserLiquidityHandlerMock is
   Keep3rLiquidityManagerParameters, 
   Keep3rLiquidityManagerUserLiquidityHandler {
 
-  constructor(address _keep3rV1) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) { }
+  constructor(address _keep3rV1) public Keep3rLiquidityManagerParameters(_keep3rV1) { }
 
   function internalDepositLiquidity(
     address _liquidityDepositor,

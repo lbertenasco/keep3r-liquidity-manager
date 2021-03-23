@@ -64,12 +64,6 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
   // job => cycle
   mapping(address => uint256) public override jobCycle;
 
-  constructor(
-    address _keep3rV1,
-    address _escrow1,
-    address _escrow2
-  ) public Keep3rLiquidityManagerUserLiquidityHandler(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
-
   function _setMinAmount(address _liquidity, uint256 _minAmount) internal {
     liquidityMinAmount[_liquidity] = _minAmount;
     emit LiquidityMinSet(_liquidity, _minAmount);

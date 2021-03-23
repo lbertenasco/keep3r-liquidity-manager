@@ -6,15 +6,20 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@lbertenasco/contract-utils/contracts/abstract/UtilsReady.sol';
 
-import './Keep3rLiquidityManagerWork.sol';
+import './Keep3rLiquidityManagerEscrowsHandler.sol';
 import './Keep3rLiquidityManagerJobHandler.sol';
+import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
+import './Keep3rLiquidityManagerParameters.sol';
+import './Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
+import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
+import './Keep3rLiquidityManagerWork.sol';
 
 contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3rLiquidityManagerJobHandler {
   constructor(
     address _keep3rV1,
     address _escrow1,
     address _escrow2
-  ) public UtilsReady() Keep3rLiquidityManagerWork(_keep3rV1, _escrow1, _escrow2) {}
+  ) public UtilsReady() Keep3rLiquidityManagerParameters(_keep3rV1) Keep3rLiquidityManagerEscrowsHandler(_escrow1, _escrow2) {}
 
   // UserLiquidityHandler
   function setLiquidityFee(uint256 _liquidityFee) external override onlyGovernor {

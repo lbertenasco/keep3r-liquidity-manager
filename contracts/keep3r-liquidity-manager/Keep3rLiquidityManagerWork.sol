@@ -5,7 +5,12 @@ pragma solidity 0.6.12;
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import './Keep3rLiquidityManagerEscrowsHandler.sol';
+import './Keep3rLiquidityManagerJobHandler.sol';
+import './Keep3rLiquidityManagerJobsLiquidityHandler.sol';
+import './Keep3rLiquidityManagerParameters.sol';
 import './Keep3rLiquidityManagerUserJobsLiquidityHandler.sol';
+import './Keep3rLiquidityManagerUserLiquidityHandler.sol';
 
 interface IKeep3rLiquidityManagerWork {
   enum Actions { None, AddLiquidityToJob, ApplyCreditToJob, UnbondLiquidityFromJob, RemoveLiquidityFromJob }
@@ -34,12 +39,6 @@ abstract contract Keep3rLiquidityManagerWork is Keep3rLiquidityManagerUserJobsLi
   mapping(address => mapping(address => Steps)) public override jobEscrowStep;
   // job => escrow => timestamp
   mapping(address => mapping(address => uint256)) public override jobEscrowTimestamp;
-
-  constructor(
-    address _keep3rV1,
-    address _escrow1,
-    address _escrow2
-  ) public Keep3rLiquidityManagerUserJobsLiquidityHandler(_keep3rV1, _escrow1, _escrow2) {}
 
   // Since all liquidity behaves the same, we just need to check one of them
   function getNextAction(address _job) public view override returns (address _escrow, Actions _action) {

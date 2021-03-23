@@ -67,7 +67,7 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   // user => lp => amount
   mapping(address => mapping(address => uint256)) public override userLiquidityIdleAmount;
 
-  constructor(address _keep3rV1) public Keep3rLiquidityManagerParameters(_keep3rV1) {
+  constructor() public {
     _setFeeReceiver(msg.sender);
   }
 
