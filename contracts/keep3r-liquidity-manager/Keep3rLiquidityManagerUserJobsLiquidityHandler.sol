@@ -116,7 +116,11 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     uint256 _amount
   ) internal {
     require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
-    require(userJobCycle[_user][_job].add(2) <= jobCycle[_job], 'Keep3rLiquidityManager::liquidity-still-locked');
+    require(
+      jobCycle[_job] >= userJobCycle[_user][_job].add(2) || // wait for full cycle
+        _jobLiquidities[_job].length() == 0, // or removes if 1 cycle was enough to remove all liquidity
+      'Keep3rLiquidityManager::liquidity-still-locked'
+    );
 
     _amount = _amount.div(2).mul(2);
 
@@ -138,6 +142,7 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     address _job,
     uint256 _amount
   ) internal {
+    // TODO validate _job on keep3r
     require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
     require(_amount <= userLiquidityIdleAmount[_user][_liquidity], 'Keep3rLiquidityManager::no-idle-liquidity-available');
     require(liquidityMinAmount[_liquidity] != 0, 'Keep3rLiquidityManager::liquidity-min-not-set');
