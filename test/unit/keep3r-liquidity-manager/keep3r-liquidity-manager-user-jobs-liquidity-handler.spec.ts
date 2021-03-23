@@ -151,14 +151,14 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
     when('adding available liquidity and more than min', () => {
       when('job didnt have that liquidity before', () => {
         given(async function () {
+          this.initialJobLiquidities = await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidities(
+            this.jobAddress
+          );
           this.addLiquidityOfUserToJobTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.addLiquidityOfUserToJob(
             owner.address,
             this.liquidityAddress,
             this.jobAddress,
             this.minAmount
-          );
-          this.initialJobLiquidities = await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidities(
-            this.jobAddress
           );
         });
         then('adds liquidity to job on user', async function () {
@@ -195,7 +195,7 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
               ),
               this.initialJobLiquidities
             )
-          ).to.deep.equal([this.jobAddress]);
+          ).to.deep.equal([this.liquidityAddress]);
         });
         then('increases desired liquidity amount of job', async function () {
           expect(
@@ -259,8 +259,35 @@ describe.only('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
     });
   });
 
-  describe('subLiquidityOfUserFromJob', () => {
+  describe.only('subLiquidityOfUserFromJob', () => {
+    given(async function () {
+      this.liquidityAddress = await wallet.generateRandomAddress();
+      this.jobAddress = await wallet.generateRandomAddress();
+      this.jobLiquidityAmount = utils.parseEther('10');
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityAmount(
+        owner.address,
+        this.jobAddress,
+        this.liquidityAddress,
+        this.jobLiquidityAmount
+      );
+    });
     when('reducing more liquidity than available', () => {
+      given(async function () {
+        this.subLiquidityTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.subLiquidityOfUserFromJob(
+          owner.address,
+          this.liquidityAddress,
+          this.jobAddress,
+          this.jobLiquidityAmount.add(1)
+        );
+        await this.subLiquidityTx;
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.subLiquidityTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::not-enough-lp-in-job'
+        );
+      });
+    });
+    when('reducing liquidity to less than minimum', () => {
       then('tx is reverted with reason');
     });
     when('reducing available liquidity', () => {
