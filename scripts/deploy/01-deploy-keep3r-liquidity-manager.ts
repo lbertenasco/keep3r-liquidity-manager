@@ -25,7 +25,7 @@ function promptAndSubmit(Keep3rLiquidityManager: ContractFactory) {
     try {
       prompt.run().then(async (answer: boolean) => {
         if (answer) {
-          console.time('Keep3rLiquidityManagers deployed');
+          console.time('Keep3rLiquidityManager deployed');
           const escrowContracts = config.contracts.mainnet.escrow;
           const klmContracts = config.contracts.mainnet.klm;
           console.log(
@@ -38,13 +38,13 @@ function promptAndSubmit(Keep3rLiquidityManager: ContractFactory) {
             klmContracts.escrow1,
             klmContracts.escrow2
           );
-          console.timeEnd('Keep3rLiquidityManagers deployed');
+          console.timeEnd('Keep3rLiquidityManager deployed');
           console.log(
             'Keep3rLiquidityManager address:',
             keep3rLiquidityManager.address
           );
           console.log(
-            'PLEASE: change .config.json & example.config.json keep3rLiquidityManagers address to:',
+            'PLEASE: change .config.json & example.config.json keep3rLiquidityManager address to:',
             keep3rLiquidityManager.address
           );
           resolve();

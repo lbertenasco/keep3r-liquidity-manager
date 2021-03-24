@@ -12,7 +12,8 @@
     "mainnet": {
       "klm": {
         "escrow1": "0xC3C272D18e31086EA7Ff0E51474adE320Ef5b3E1",
-        "escrow2": "0x39392ae1b305161ecb500be8da88444c5b5a8ed5"
+        "escrow2": "0x39392ae1b305161ecb500be8da88444c5b5a8ed5",
+        "keep3rLiquidityManager": "0xf14cb1FeB6C40F26D9cA0ea39a9a613428CDc9cA"
       },
       "escrow": {
         "escrow1": "0x9fA395901A92490D1496c94a8578e1f4eF9fB1d1",
