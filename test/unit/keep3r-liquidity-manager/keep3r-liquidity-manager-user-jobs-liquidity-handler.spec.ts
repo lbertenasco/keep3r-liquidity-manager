@@ -9,6 +9,8 @@ const { when, given, then } = bdd;
 
 describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
   let owner: SignerWithAddress;
+  let keep3V1FakeContract: ContractFactory;
+  let keep3rV1Fake: Contract;
   let keep3rEscrowContract: ContractFactory;
   let keep3rEscrow1: Contract;
   let keep3rEscrow2: Contract;
@@ -17,6 +19,9 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
 
   before('Setup accounts and contracts', async () => {
     [owner] = await ethers.getSigners();
+    keep3V1FakeContract = await ethers.getContractFactory(
+      'contracts/mock/Keep3rV1.sol:FakeKeep3rV1'
+    );
     keep3rEscrowContract = await ethers.getContractFactory('Keep3rEscrow');
     keep3rLiquidityManagerUserJobsLiquditiyHandlerContract = await ethers.getContractFactory(
       'contracts/mock/keep3r-liquidity-manager/Keep3rLiquidityManagerUserJobsLiquidityHandler.sol:Keep3rLiquidityManagerUserJobsLiquidityHandlerMock'
@@ -24,11 +29,11 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
   });
 
   beforeEach('Deploy necessary contracts', async () => {
-    const keep3rV1 = await wallet.generateRandomAddress();
-    keep3rEscrow1 = await keep3rEscrowContract.deploy(keep3rV1);
-    keep3rEscrow2 = await keep3rEscrowContract.deploy(keep3rV1);
+    keep3rV1Fake = await keep3V1FakeContract.deploy();
+    keep3rEscrow1 = await keep3rEscrowContract.deploy(keep3rV1Fake.address);
+    keep3rEscrow2 = await keep3rEscrowContract.deploy(keep3rV1Fake.address);
     keep3rLiquidityManagerUserJobsLiquditiyHandler = await keep3rLiquidityManagerUserJobsLiquditiyHandlerContract.deploy(
-      keep3rV1, // keep3rV1
+      keep3rV1Fake.address, // keep3rV1
       keep3rEscrow1.address, // escrow1
       keep3rEscrow2.address // escrow2
     );
@@ -166,7 +171,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
     });
-    when('removing correct amount and at the correct moment', () => {
+    when('removing correct amount after 2 job cycles have gone through', () => {
       given(async function () {
         this.unlockedAmount = utils.parseUnits('123', 'gwei');
         this.jobLiquidityAmount = utils.parseEther('10');
@@ -230,7 +235,6 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
           )
         ).to.equal(this.idleAmount.add(this.amountToWithdraw));
       });
-      then.skip('pull liquidity from escrows', async function () {});
       then('emits event with correct args', async function () {
         await expect(this.removeIdleTx).to.emit(
           keep3rLiquidityManagerUserJobsLiquditiyHandler,
@@ -238,6 +242,14 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
     });
+    when(
+      'removing correct amount after enough job cycles to remove liquidity',
+      () => {
+        then('liquidity locked should be reduced');
+        then('idle liquidity should increase');
+        then('emits event with correct args');
+      }
+    );
   });
 
   describe('addLiquidityOfUserToJob', () => {
@@ -246,6 +258,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       this.jobAddress = await wallet.generateRandomAddress();
       this.idleAmount = await utils.parseEther('10');
       this.minAmount = utils.parseEther('1');
+      await keep3rV1Fake.addJob(this.jobAddress);
       await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
         this.liquidityAddress,
         this.minAmount
