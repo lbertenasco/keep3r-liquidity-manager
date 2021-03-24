@@ -12,27 +12,33 @@ import {
   utils,
 } from 'ethers';
 import { ethers } from 'hardhat';
-import { constants, bdd, erc20, behaviours } from '../../utils';
+import { constants, bdd, erc20, behaviours, wallet } from '../../utils';
 const { when, given, then } = bdd;
 
 describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
   let owner: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
+  let keep3rV1FakeContract: ContractFactory;
+  let keep3rV1Fake: Contract;
   let keep3rLiquidityManagerUserLiquidityHandlerContract: ContractFactory;
   let keep3rLiquidityManagerUserLiquidityHandler: Contract;
   let lp: Contract;
 
   before('Setup accounts and contracts', async () => {
     [owner, alice, bob] = await ethers.getSigners();
+    keep3rV1FakeContract = await ethers.getContractFactory(
+      'contracts/mock/Keep3rV1.sol:FakeKeep3rV1'
+    );
     keep3rLiquidityManagerUserLiquidityHandlerContract = await ethers.getContractFactory(
       'contracts/mock/keep3r-liquidity-manager/Keep3rLiquidityManagerUserLiquidityHandler.sol:Keep3rLiquidityManagerUserLiquidityHandlerMock'
     );
   });
 
   beforeEach('Deploy necessary contracts', async () => {
+    keep3rV1Fake = await keep3rV1FakeContract.deploy();
     keep3rLiquidityManagerUserLiquidityHandler = await keep3rLiquidityManagerUserLiquidityHandlerContract.deploy(
-      '0x0000000000000000000000000000000000000002'
+      keep3rV1Fake.address
     );
     lp = await erc20.deploy({
       name: 'lp1',
@@ -274,7 +280,24 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
   describe('_depositLiquidity', () => {
     const fundsToMove = BigNumber.from('1000');
     let depositTxResponse: TransactionResponse;
-
+    given(async function () {
+      await keep3rV1Fake.addLiquidity(lp.address);
+    });
+    when('liquidity is not accepted', () => {
+      given(async function () {
+        this.depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
+          owner.address,
+          alice.address,
+          await wallet.generateRandomAddress(),
+          fundsToMove
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.depositTxResponse).to.be.revertedWith(
+          'Keep3rLiquidityManager::liquidity-not-accepted-on-keep3r'
+        );
+      });
+    });
     when('contract is not approved to move funds', () => {
       given(async () => {
         await lp.mint(owner.address, fundsToMove);
@@ -479,7 +502,24 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
   describe('depositLiquidityTo', () => {
     const fundsToMove = BigNumber.from('1000');
     let depositTxResponse: TransactionResponse;
-
+    given(async function () {
+      await keep3rV1Fake.addLiquidity(lp.address);
+    });
+    when('liquidity is not accepted', () => {
+      given(async function () {
+        this.depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
+          owner.address,
+          alice.address,
+          await wallet.generateRandomAddress(),
+          fundsToMove
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.depositTxResponse).to.be.revertedWith(
+          'Keep3rLiquidityManager::liquidity-not-accepted-on-keep3r'
+        );
+      });
+    });
     when('contract is not approved to move funds', () => {
       given(async () => {
         await lp.mint(owner.address, fundsToMove);
@@ -680,7 +720,24 @@ describe('Keep3rLiquidityManagerUserLiquidityHandler', () => {
   describe('depositLiquidity', () => {
     const fundsToMove = BigNumber.from('1000');
     let depositTxResponse: TransactionResponse;
-
+    given(async function () {
+      await keep3rV1Fake.addLiquidity(lp.address);
+    });
+    when('liquidity is not accepted', () => {
+      given(async function () {
+        this.depositTxResponse = keep3rLiquidityManagerUserLiquidityHandler.internalDepositLiquidity(
+          owner.address,
+          alice.address,
+          await wallet.generateRandomAddress(),
+          fundsToMove
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.depositTxResponse).to.be.revertedWith(
+          'Keep3rLiquidityManager::liquidity-not-accepted-on-keep3r'
+        );
+      });
+    });
     when('contract is not approved to move funds', () => {
       given(async () => {
         await lp.mint(owner.address, fundsToMove);

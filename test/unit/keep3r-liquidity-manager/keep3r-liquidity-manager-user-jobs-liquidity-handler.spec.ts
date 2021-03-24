@@ -9,7 +9,7 @@ const { when, given, then } = bdd;
 
 describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
   let owner: SignerWithAddress;
-  let keep3V1FakeContract: ContractFactory;
+  let keep3rV1FakeContract: ContractFactory;
   let keep3rV1Fake: Contract;
   let keep3rEscrowContract: ContractFactory;
   let keep3rEscrow1: Contract;
@@ -19,7 +19,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
 
   before('Setup accounts and contracts', async () => {
     [owner] = await ethers.getSigners();
-    keep3V1FakeContract = await ethers.getContractFactory(
+    keep3rV1FakeContract = await ethers.getContractFactory(
       'contracts/mock/Keep3rV1.sol:FakeKeep3rV1'
     );
     keep3rEscrowContract = await ethers.getContractFactory('Keep3rEscrow');
@@ -29,7 +29,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
   });
 
   beforeEach('Deploy necessary contracts', async () => {
-    keep3rV1Fake = await keep3V1FakeContract.deploy();
+    keep3rV1Fake = await keep3rV1FakeContract.deploy();
     keep3rEscrow1 = await keep3rEscrowContract.deploy(keep3rV1Fake.address);
     keep3rEscrow2 = await keep3rEscrowContract.deploy(keep3rV1Fake.address);
     keep3rLiquidityManagerUserJobsLiquditiyHandler = await keep3rLiquidityManagerUserJobsLiquditiyHandlerContract.deploy(
@@ -120,6 +120,10 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
     });
     when('not enough job cycles have gone through', () => {
       given(async function () {
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.addLPToJob(
+          this.jobAddress,
+          this.liquidityAddress
+        );
         this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
           owner.address,
           this.liquidityAddress,
@@ -268,6 +272,21 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         this.liquidityAddress,
         this.idleAmount
       );
+    });
+    when('adding liquidity to a non existen job', () => {
+      given(async function () {
+        this.addLiquidityOfUserToJobTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.addLiquidityOfUserToJob(
+          owner.address,
+          this.liquidityAddress,
+          await wallet.generateRandomAddress(),
+          0
+        );
+      });
+      then('tx is reverted with reason', async function () {
+        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith(
+          'Keep3rLiquidityManager::job-not-on-keep3r'
+        );
+      });
     });
     when('adding zero liquidity', () => {
       given(async function () {
