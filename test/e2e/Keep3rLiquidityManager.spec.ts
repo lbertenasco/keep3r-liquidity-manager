@@ -42,7 +42,7 @@ describe('Keep3rLiquidityManager', () => {
   let keep3rLiquidityManager: Contract;
   let keep3rLiquidityManagerJob: Contract;
 
-  let forkBlockNumber: number;
+  const forkBlockNumber = 12103332; // will allow to cache blockchain state
 
   before('Setup accounts and contracts', async () => {
     [owner, alice, bob] = await ethers.getSigners();
@@ -53,7 +53,6 @@ describe('Keep3rLiquidityManager', () => {
     Keep3rLiquidityManagerJob = await ethers.getContractFactory(
       'Keep3rLiquidityManagerJob'
     );
-    forkBlockNumber = await ethers.provider.getBlockNumber();
   });
 
   beforeEach(async () => {
