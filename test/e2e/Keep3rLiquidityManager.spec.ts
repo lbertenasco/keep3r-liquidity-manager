@@ -18,6 +18,8 @@ const keep3rContracts = {
 
 describe('Keep3rLiquidityManager', () => {
   let owner: SignerWithAddress;
+  let alice: SignerWithAddress;
+  let bob: SignerWithAddress;
   let keep3r: Contract;
   let keep3rV1Helper: Contract;
   let keep3rV1Oracle: Contract;
@@ -43,7 +45,7 @@ describe('Keep3rLiquidityManager', () => {
   let forkBlockNumber: number;
 
   before('Setup accounts and contracts', async () => {
-    [owner] = await ethers.getSigners();
+    [owner, alice, bob] = await ethers.getSigners();
     Keep3rEscrow = await ethers.getContractFactory('Keep3rEscrow');
     Keep3rLiquidityManager = await ethers.getContractFactory(
       'Keep3rLiquidityManager'
@@ -528,6 +530,113 @@ describe('Keep3rLiquidityManager', () => {
       expect(
         await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
           owner.address,
+          job,
+          lp.address
+        )
+      ).to.eq(0);
+    });
+  });
+
+  describe('alice and bob provide liquidity', () => {
+    const amount = e18.mul(100);
+    beforeEach(async () => {
+      await keep3rLiquidityManager.setMinAmount(lp.address, e18);
+      await keep3rLiquidityManager.setJob(keep3rLiquidityManagerJob.address);
+    });
+    it('succeeds', async () => {
+      const job = keep3rLiquidityManagerJob.address;
+
+      // alice
+      await lp.connect(lpWhale).transfer(alice.address, amount);
+      await lp.connect(alice).approve(keep3rLiquidityManager.address, amount);
+      await keep3rLiquidityManager
+        .connect(alice)
+        .depositLiquidity(lp.address, amount);
+      // bob
+      await lp.connect(lpWhale).transfer(bob.address, amount);
+      await lp.connect(bob).approve(keep3rLiquidityManager.address, amount);
+      await keep3rLiquidityManager
+        .connect(bob)
+        .depositLiquidity(lp.address, amount);
+
+      // alice adds liquidity
+      await keep3rLiquidityManager
+        .connect(alice)
+        .setJobLiquidityAmount(lp.address, job, amount);
+      await cycleWork(4, job);
+
+      // bob adds liquidity
+      await keep3rLiquidityManager
+        .connect(bob)
+        .setJobLiquidityAmount(lp.address, job, amount);
+      await cycleWork(1, job);
+      await keep3rLiquidityManager
+        .connect(bob)
+        .setJobLiquidityAmount(lp.address, job, 0);
+      await cycleWork(2, job);
+
+      // idle liquidity
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityAmount(
+          alice.address,
+          job,
+          lp.address
+        )
+      ).to.eq(amount);
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityAmount(
+          bob.address,
+          job,
+          lp.address
+        )
+      ).to.eq(0);
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
+          bob.address,
+          job,
+          lp.address
+        )
+      ).to.eq(amount);
+      expect(await keep3rLiquidityManager.callStatic.jobCycle(job)).to.eq(5);
+
+      // remove liquidity from job
+      await keep3rLiquidityManager
+        .connect(bob)
+        .removeIdleLiquidityFromJob(lp.address, job, amount);
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
+          bob.address,
+          job,
+          lp.address
+        )
+      ).to.eq(0);
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
+          alice.address,
+          job,
+          lp.address
+        )
+      ).to.eq(amount);
+
+      await keep3rLiquidityManager
+        .connect(alice)
+        .setJobLiquidityAmount(lp.address, job, 0);
+      await cycleWork(1, job);
+      await keep3rLiquidityManagerJob.connect(keeper).work(job);
+
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityAmount(
+          alice.address,
+          job,
+          lp.address
+        )
+      ).to.eq(0);
+      await keep3rLiquidityManager
+        .connect(alice)
+        .removeIdleLiquidityFromJob(lp.address, job, amount);
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
+          alice.address,
           job,
           lp.address
         )
