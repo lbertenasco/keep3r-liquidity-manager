@@ -10,6 +10,10 @@
   },
   "contracts": {
     "mainnet": {
+      "klm": {
+        "escrow1": "0xC3C272D18e31086EA7Ff0E51474adE320Ef5b3E1",
+        "escrow2": "0x39392ae1b305161ecb500be8da88444c5b5a8ed5"
+      },
       "escrow": {
         "escrow1": "0x9fA395901A92490D1496c94a8578e1f4eF9fB1d1",
         "escrow2": "0x8f2245D1051f3777E314ba6FdEe1152774CE868C",
