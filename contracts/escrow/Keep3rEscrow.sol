@@ -4,7 +4,8 @@ pragma solidity 0.6.12;
 
 import './Keep3rEscrowParameters.sol';
 import './Keep3rEscrowLiquidityHandler.sol';
-import './IKeep3rEscrow.sol';
+
+interface IKeep3rEscrow is IKeep3rEscrowParameters, IKeep3rEscrowLiquidityHandler {}
 
 contract Keep3rEscrow is Keep3rEscrowParameters, Keep3rEscrowLiquidityHandler, IKeep3rEscrow {
   constructor(address _keep3r) public Keep3rEscrowParameters(_keep3r) {}

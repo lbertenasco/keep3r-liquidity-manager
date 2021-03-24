@@ -4,7 +4,9 @@ pragma solidity 0.6.12;
 
 import '@lbertenasco/contract-utils/contracts/abstract/UtilsReady.sol';
 
-import './IKeep3rEscrowParameters.sol';
+interface IKeep3rEscrowParameters {
+  function keep3r() external returns (address);
+}
 
 abstract contract Keep3rEscrowParameters is UtilsReady, IKeep3rEscrowParameters {
   address public immutable override keep3r;

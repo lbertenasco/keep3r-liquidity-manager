@@ -5,7 +5,7 @@ pragma solidity 0.6.12;
 import '@lbertenasco/contract-utils/interfaces/utils/IGovernable.sol';
 import '@lbertenasco/contract-utils/interfaces/utils/ICollectableDust.sol';
 
-import '../escrow/IKeep3rEscrow.sol';
+import '../escrow/Keep3rEscrow.sol';
 
 interface IKeep3rLiquidityManagerEscrowsHandler {
   event Escrow1Set(address _escrow1);

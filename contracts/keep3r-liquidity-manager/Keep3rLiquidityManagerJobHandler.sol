@@ -16,7 +16,7 @@ abstract contract Keep3rLiquidityManagerJobHandler is IKeep3rLiquidityManagerJob
   }
 
   modifier onlyJob() {
-    require(msg.sender == job, 'Keep3rLiquidityManagerJobHandler::onlyJob:msg-sender-is-not-the-correct-job');
+    require(msg.sender == job, 'Keep3rLiquidityManagerJobHandler::unauthorized-job');
     _;
   }
 }
