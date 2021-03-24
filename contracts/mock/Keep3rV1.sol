@@ -17,11 +17,11 @@ contract FakeKeep3rV1 {
     _liquidities.add(_liquidity);
   }
 
-  function jobs(address _job) public returns (bool) {
+  function jobs(address _job) public view returns (bool) {
     return _jobs.contains(_job);
   }
 
-  function liquidityAccepted(address _liquidity) public returns (bool) {
+  function liquidityAccepted(address _liquidity) public view returns (bool) {
     return _liquidities.contains(_liquidity);
   }
 }
