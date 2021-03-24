@@ -42,6 +42,12 @@ interface IKeep3rLiquidityManagerUserJobsLiquidityHandler {
     uint256 _amount
   ) external;
 
+  function forceRemoveLiquidityOfUserFromJob(
+    address _user,
+    address _liquidity,
+    address _job
+  ) external;
+
   function removeIdleLiquidityFromJob(
     address _liquidity,
     address _job,
@@ -109,28 +115,14 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
     emit LiquidityOfJobSet(_user, _liquidity, _job, _amount);
   }
 
-  function _removeIdleLiquidityOfUserFromJob(
+  function _forceRemoveLiquidityOfUserFromJob(
     address _user,
     address _liquidity,
-    address _job,
-    uint256 _amount
+    address _job
   ) internal {
-    require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
-    require(
-      jobCycle[_job] >= userJobCycle[_user][_job].add(2) || // wait for full cycle
-        _jobLiquidities[_job].length() == 0, // or removes if 1 cycle was enough to remove all liquidity
-      'Keep3rLiquidityManager::liquidity-still-locked'
-    );
-
-    _amount = _amount.div(2).mul(2);
-
-    uint256 _unlockedIdleAvailable = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(userJobLiquidityAmount[_user][_job][_liquidity]);
-    require(_amount <= _unlockedIdleAvailable, 'Keep3rLiquidityManager::amount-bigger-than-idle-available');
-
-    userJobLiquidityLockedAmount[_user][_job][_liquidity] = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(_amount);
-    userLiquidityIdleAmount[_user][_liquidity] = userLiquidityIdleAmount[_user][_liquidity].add(_amount);
-
-    emit IdleLiquidityRemovedFromJob(_user, _liquidity, _job, _amount);
+    require(!IKeep3rV1(keep3rV1).jobs(_job), 'Keep3rLiquidityManager::force-remove-liquidity:job-on-keep3r');
+    // set liquidity as 0 to force exit on stuck job
+    _setLiquidityToJobOfUser(_user, _liquidity, _job, 0);
   }
 
   function _addLiquidityOfUserToJob(
@@ -175,5 +167,29 @@ abstract contract Keep3rLiquidityManagerUserJobsLiquidityHandler is
 
     userJobLiquidityAmount[_user][_job][_liquidity] = userJobLiquidityAmount[_user][_job][_liquidity].sub(_amount);
     jobLiquidityDesiredAmount[_job][_liquidity] = jobLiquidityDesiredAmount[_job][_liquidity].sub(_amount);
+  }
+
+  function _removeIdleLiquidityOfUserFromJob(
+    address _user,
+    address _liquidity,
+    address _job,
+    uint256 _amount
+  ) internal {
+    require(_amount > 0, 'Keep3rLiquidityManager::zero-amount');
+    require(
+      jobCycle[_job] >= userJobCycle[_user][_job].add(2) || // wait for full cycle
+        _jobLiquidities[_job].length() == 0, // or removes if 1 cycle was enough to remove all liquidity
+      'Keep3rLiquidityManager::liquidity-still-locked'
+    );
+
+    _amount = _amount.div(2).mul(2);
+
+    uint256 _unlockedIdleAvailable = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(userJobLiquidityAmount[_user][_job][_liquidity]);
+    require(_amount <= _unlockedIdleAvailable, 'Keep3rLiquidityManager::amount-bigger-than-idle-available');
+
+    userJobLiquidityLockedAmount[_user][_job][_liquidity] = userJobLiquidityLockedAmount[_user][_job][_liquidity].sub(_amount);
+    userLiquidityIdleAmount[_user][_liquidity] = userLiquidityIdleAmount[_user][_liquidity].add(_amount);
+
+    emit IdleLiquidityRemovedFromJob(_user, _liquidity, _job, _amount);
   }
 }

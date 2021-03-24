@@ -34,6 +34,14 @@ contract Keep3rLiquidityManagerUserJobsLiquidityHandlerMock is
     _setLiquidityToJobOfUser(_user, _liquidity, _job, _amount);
   }
 
+  function forceRemoveLiquidityOfUserFromJob(
+    address _user,
+    address _liquidity,
+    address _job
+  ) external override {
+    _forceRemoveLiquidityOfUserFromJob(_user, _liquidity, _job);
+  }
+
   function removeIdleLiquidityOfUserFromJob(
     address _user,
     address _liquidity,

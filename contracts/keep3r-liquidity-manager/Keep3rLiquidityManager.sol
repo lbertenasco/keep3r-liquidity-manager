@@ -34,7 +34,16 @@ contract Keep3rLiquidityManager is UtilsReady, Keep3rLiquidityManagerWork, Keep3
     _setMinAmount(_liquidity, _minAmount);
   }
 
-  // Keep3rLiquidityManagerWork
+  // UserJobsLiquidityHandler
+  function forceRemoveLiquidityOfUserFromJob(
+    address _user,
+    address _liquidity,
+    address _job
+  ) external override onlyGovernor {
+    _forceRemoveLiquidityOfUserFromJob(_user, _liquidity, _job);
+  }
+
+  // Work
   function work(address _job) external override onlyJob {
     (address _escrow, Actions _action) = getNextAction(_job);
     require(_workable(_action), 'Keep3rLiquidityManager::work:not-workable');

@@ -474,6 +474,67 @@ describe('Keep3rLiquidityManager', () => {
     });
   });
 
+  describe('cycle after removed job', () => {
+    const amount = e18.mul(100);
+    let randomJob: string;
+    beforeEach(async () => {
+      await keep3rLiquidityManager.setMinAmount(lp.address, e18);
+      await keep3rLiquidityManager.setJob(keep3rLiquidityManagerJob.address);
+
+      // setup random job
+      randomJob = '0x73353801921417F465377c8d898c6f4C0270282C'; // Keep3rV1Oracle
+      await addLiquidityToJob(randomJob, amount);
+    });
+    it('succeeds', async () => {
+      const job = randomJob;
+      await cycleWork(4, job);
+
+      // removes job from keep3r
+      await keep3r.removeJob(job);
+
+      // reverts on addLiquidityToJob
+      await expect(keep3rLiquidityManagerJob.connect(keeper).work(job)).to.be
+        .reverted;
+
+      // remove liquidity
+      await removeLiquidityFromJob(job);
+
+      await cycleWork(1, job);
+      await keep3rLiquidityManagerJob.connect(keeper).work(job);
+
+      // idle liquidity
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityAmount(
+          owner.address,
+          job,
+          lp.address
+        )
+      ).to.eq(0);
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
+          owner.address,
+          job,
+          lp.address
+        )
+      ).to.eq(amount);
+      expect(await keep3rLiquidityManager.callStatic.jobCycle(job)).to.eq(4);
+
+      // remove liquidity from job
+      await keep3rLiquidityManager.removeIdleLiquidityFromJob(
+        lp.address,
+        job,
+        amount
+      );
+      expect(
+        await keep3rLiquidityManager.callStatic.userJobLiquidityLockedAmount(
+          owner.address,
+          job,
+          lp.address
+        )
+      ).to.eq(0);
+    });
+  });
+
   const advanceDays = async (days: number) => {
     await evm.advanceTimeAndBlock(days * DAY);
     await updateOraclePrices();
@@ -503,27 +564,20 @@ describe('Keep3rLiquidityManager', () => {
     );
   };
 
-  const cycleWork = async (times: number) => {
+  const cycleWork = async (
+    times: number,
+    job: string = keep3rLiquidityManagerJob.address
+  ) => {
     for (let i = 0; i < times; i++) {
-      await keep3rLiquidityManagerJob
-        .connect(keeper)
-        .work(keep3rLiquidityManagerJob.address);
-      expect(
-        await keep3rLiquidityManagerJob.callStatic.workable(
-          keep3rLiquidityManagerJob.address
-        )
-      ).to.be.false;
+      await keep3rLiquidityManagerJob.connect(keeper).work(job);
+      expect(await keep3rLiquidityManagerJob.callStatic.workable(job)).to.be
+        .false;
       await advanceDays(3);
 
       // applyLiquidity on escrow2 and unbond on escrow1 and waits 14 days
-      await keep3rLiquidityManagerJob
-        .connect(keeper)
-        .work(keep3rLiquidityManagerJob.address);
-      expect(
-        await keep3rLiquidityManagerJob.callStatic.workable(
-          keep3rLiquidityManagerJob.address
-        )
-      ).to.be.false;
+      await keep3rLiquidityManagerJob.connect(keeper).work(job);
+      expect(await keep3rLiquidityManagerJob.callStatic.workable(job)).to.be
+        .false;
       await advanceDays(14);
     }
   };
