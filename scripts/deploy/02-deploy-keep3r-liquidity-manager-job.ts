@@ -33,7 +33,7 @@ function promptAndSubmit(Keep3rLiquidityManagerJob: ContractFactory) {
             klmContracts.keep3rLiquidityManager,
             escrowContracts.keep3r,
             ZERO_ADDRESS,
-            e18.mul(50), // 50 KP3R
+            e18.mul(50).toString(), // 50 KP3R
             0,
             0,
             true
