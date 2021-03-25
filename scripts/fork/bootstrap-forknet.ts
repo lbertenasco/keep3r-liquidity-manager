@@ -58,7 +58,6 @@ async function main() {
       await lp.connect(lpWhale).transfer(account, amount);
     }
     console.log('ready :)');
-    return new Promise((resolve) => setTimeout(resolve, 2147483646));
   });
 }
 

@@ -18,6 +18,9 @@ module.exports = {
               url: process.env.MAINNET_HTTPS_URL,
             },
           },
+          localhost: {
+            url: 'http://127.0.0.1:8545/',
+          },
           // localMainnet: {
           //   url: process.env.LOCAL_MAINNET_HTTPS_URL,
           //   accounts: [process.env.LOCAL_MAINNET_PRIVATE_KEY],
