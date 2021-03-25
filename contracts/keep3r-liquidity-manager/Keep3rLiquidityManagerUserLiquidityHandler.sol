@@ -53,7 +53,7 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   using SafeERC20 for IERC20;
 
   // liquidity fee precision
-  uint256 public constant PRECISION = 1_000;
+  uint256 public constant PRECISION = 1_000; // min is 0.1%
   // max liquidity fee
   uint256 public constant MAX_LIQUIDITY_FEE = PRECISION / 10; // 10%
   // liquidity fee
@@ -146,7 +146,6 @@ abstract contract Keep3rLiquidityManagerUserLiquidityHandler is Keep3rLiquidityM
   }
 
   function _setLiquidityFee(uint256 _liquidityFee) internal {
-    // TODO better revert messages
     require(_liquidityFee <= MAX_LIQUIDITY_FEE, 'Keep3rLiquidityManager::fee-exceeds-max-liquidity-fee');
     liquidityFee = _liquidityFee;
     emit LiquidityFeeSet(_liquidityFee);
