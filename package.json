@@ -23,6 +23,7 @@
     "fork": "FORK=true hardhat node",
     "fork:script": "FORK=true hardhat run",
     "fork:test": "FORK=true npm run test",
+    "fork:workable": "FORK=true npx hardhat run scripts/fork/workable.ts",
     "scripts": "ts-node utils/run-script.ts",
     "postinstall": "husky install",
     "lint:check": "solhint 'contracts/**/*.sol' 'interfaces/**/*.sol' && prettier --check './**'",
