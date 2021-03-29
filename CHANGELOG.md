@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.1](https://github.com/lbertenasco/keep3r-liquidity-manager/compare/v1.0.0...v1.0.1) (2021-03-29)
+
+### Bug Fixes
+
+- no empty block rules set off ([beb4aa5](https://github.com/lbertenasco/keep3r-liquidity-manager/commit/beb4aa586556719d4886b3582f7679d0b1a892c3))
+
 ## 1.0.0 (2021-03-29)
 
 ### Features
