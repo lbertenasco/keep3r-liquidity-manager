@@ -19,9 +19,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
 
   before('Setup accounts and contracts', async () => {
     [owner] = await ethers.getSigners();
-    keep3rV1FakeContract = await ethers.getContractFactory(
-      'contracts/mock/Keep3rV1.sol:FakeKeep3rV1'
-    );
+    keep3rV1FakeContract = await ethers.getContractFactory('contracts/mock/Keep3rV1.sol:FakeKeep3rV1');
     keep3rEscrowContract = await ethers.getContractFactory('Keep3rEscrow');
     keep3rLiquidityManagerUserJobsLiquditiyHandlerContract = await ethers.getContractFactory(
       'contracts/mock/keep3r-liquidity-manager/Keep3rLiquidityManagerUserJobsLiquidityHandler.sol:Keep3rLiquidityManagerUserJobsLiquidityHandlerMock'
@@ -44,24 +42,14 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       given(async function () {
         this.liquidityAddress = await wallet.generateRandomAddress();
         this.minAmount = utils.parseUnits('100', 'gwei');
-        this.setMinAmountTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
-          this.liquidityAddress,
-          this.minAmount
-        );
+        this.setMinAmountTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(this.liquidityAddress, this.minAmount);
       });
       then('sets new min amount', async function () {
-        expect(
-          await keep3rLiquidityManagerUserJobsLiquditiyHandler.liquidityMinAmount(
-            this.liquidityAddress
-          )
-        ).to.equal(this.minAmount);
+        expect(await keep3rLiquidityManagerUserJobsLiquditiyHandler.liquidityMinAmount(this.liquidityAddress)).to.equal(this.minAmount);
       });
       then('emits event', async function () {
         await expect(this.setMinAmountTx)
-          .to.emit(
-            keep3rLiquidityManagerUserJobsLiquditiyHandler,
-            'LiquidityMinSet'
-          )
+          .to.emit(keep3rLiquidityManagerUserJobsLiquditiyHandler, 'LiquidityMinSet')
           .withArgs(this.liquidityAddress, this.minAmount);
       });
     });
@@ -93,15 +81,8 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       this.jobAddress = await wallet.generateRandomAddress();
       this.idleAmount = await utils.parseEther('10');
       this.minAmount = utils.parseEther('1');
-      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
-        this.liquidityAddress,
-        this.minAmount
-      );
-      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(
-        owner.address,
-        this.liquidityAddress,
-        this.idleAmount
-      );
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(this.liquidityAddress, this.minAmount);
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(owner.address, this.liquidityAddress, this.idleAmount);
     });
     when('removing zero liquidity', () => {
       given(async function () {
@@ -113,17 +94,12 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.removeIdleTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::zero-amount'
-        );
+        await expect(this.removeIdleTx).to.be.revertedWith('Keep3rLiquidityManager::zero-amount');
       });
     });
     when('not enough job cycles have gone through', () => {
       given(async function () {
-        await keep3rLiquidityManagerUserJobsLiquditiyHandler.addLPToJob(
-          this.jobAddress,
-          this.liquidityAddress
-        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.addLPToJob(this.jobAddress, this.liquidityAddress);
         this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
           owner.address,
           this.liquidityAddress,
@@ -132,9 +108,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.removeIdleTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::liquidity-still-locked'
-        );
+        await expect(this.removeIdleTx).to.be.revertedWith('Keep3rLiquidityManager::liquidity-still-locked');
       });
     });
     when('removing more than unlocked', () => {
@@ -143,12 +117,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         this.jobLiquidityAmount = utils.parseEther('10');
         await keep3rLiquidityManagerUserJobsLiquditiyHandler.setJobCycle(
           this.jobAddress,
-          (
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobCycle(
-              owner.address,
-              this.jobAddress
-            )
-          ).add(2)
+          (await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobCycle(owner.address, this.jobAddress)).add(2)
         );
         await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityAmount(
           owner.address,
@@ -170,9 +139,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.removeIdleTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::amount-bigger-than-idle-available'
-        );
+        await expect(this.removeIdleTx).to.be.revertedWith('Keep3rLiquidityManager::amount-bigger-than-idle-available');
       });
     });
     when('removing correct amount after 2 job cycles have gone through', () => {
@@ -181,19 +148,10 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         this.jobLiquidityAmount = utils.parseEther('10');
         this.amountToWithdraw = this.unlockedAmount.div(2);
         this.idleAmount = utils.parseEther('1.5');
-        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(
-          owner.address,
-          this.liquidityAddress,
-          this.idleAmount
-        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(owner.address, this.liquidityAddress, this.idleAmount);
         await keep3rLiquidityManagerUserJobsLiquditiyHandler.setJobCycle(
           this.jobAddress,
-          (
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobCycle(
-              owner.address,
-              this.jobAddress
-            )
-          ).add(2)
+          (await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobCycle(owner.address, this.jobAddress)).add(2)
         );
         await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserJobLiquidityAmount(
           owner.address,
@@ -207,14 +165,8 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
           this.liquidityAddress,
           this.jobLiquidityAmount
         );
-        await this.liquidityToken.transfer(
-          keep3rEscrow1.address,
-          this.amountToWithdraw.div(2)
-        );
-        await this.liquidityToken.transfer(
-          keep3rEscrow2.address,
-          this.amountToWithdraw.div(2)
-        );
+        await this.liquidityToken.transfer(keep3rEscrow1.address, this.amountToWithdraw.div(2));
+        await this.liquidityToken.transfer(keep3rEscrow2.address, this.amountToWithdraw.div(2));
         this.removeIdleTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.removeIdleLiquidityOfUserFromJob(
           owner.address,
           this.liquidityAddress,
@@ -232,28 +184,19 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         ).to.equal(this.jobLiquidityAmount.sub(this.amountToWithdraw));
       });
       then('idle liquidity should increase', async function () {
-        expect(
-          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(
-            owner.address,
-            this.liquidityAddress
-          )
-        ).to.equal(this.idleAmount.add(this.amountToWithdraw));
-      });
-      then('emits event with correct args', async function () {
-        await expect(this.removeIdleTx).to.emit(
-          keep3rLiquidityManagerUserJobsLiquditiyHandler,
-          'IdleLiquidityRemovedFromJob'
+        expect(await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(owner.address, this.liquidityAddress)).to.equal(
+          this.idleAmount.add(this.amountToWithdraw)
         );
       });
+      then('emits event with correct args', async function () {
+        await expect(this.removeIdleTx).to.emit(keep3rLiquidityManagerUserJobsLiquditiyHandler, 'IdleLiquidityRemovedFromJob');
+      });
     });
-    when(
-      'removing correct amount after enough job cycles to remove liquidity',
-      () => {
-        then('liquidity locked should be reduced');
-        then('idle liquidity should increase');
-        then('emits event with correct args');
-      }
-    );
+    when('removing correct amount after enough job cycles to remove liquidity', () => {
+      then('liquidity locked should be reduced');
+      then('idle liquidity should increase');
+      then('emits event with correct args');
+    });
   });
 
   describe('addLiquidityOfUserToJob', () => {
@@ -263,15 +206,8 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       this.idleAmount = await utils.parseEther('10');
       this.minAmount = utils.parseEther('1');
       await keep3rV1Fake.addJob(this.jobAddress);
-      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
-        this.liquidityAddress,
-        this.minAmount
-      );
-      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(
-        owner.address,
-        this.liquidityAddress,
-        this.idleAmount
-      );
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(this.liquidityAddress, this.minAmount);
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setUserLiquidityIdleAmount(owner.address, this.liquidityAddress, this.idleAmount);
     });
     when('adding liquidity to a non existen job', () => {
       given(async function () {
@@ -283,9 +219,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::job-not-on-keep3r'
-        );
+        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith('Keep3rLiquidityManager::job-not-on-keep3r');
       });
     });
     when('adding zero liquidity', () => {
@@ -298,9 +232,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::zero-amount'
-        );
+        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith('Keep3rLiquidityManager::zero-amount');
       });
     });
     when('adding more liquidity than idle available', () => {
@@ -313,17 +245,12 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::no-idle-liquidity-available'
-        );
+        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith('Keep3rLiquidityManager::no-idle-liquidity-available');
       });
     });
     when('liquidity min amount is not set', () => {
       given(async function () {
-        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
-          this.liquidityAddress,
-          0
-        );
+        await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(this.liquidityAddress, 0);
         this.addLiquidityOfUserToJobTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.addLiquidityOfUserToJob(
           owner.address,
           this.liquidityAddress,
@@ -332,9 +259,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::liquidity-min-not-set'
-        );
+        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith('Keep3rLiquidityManager::liquidity-min-not-set');
       });
     });
     when('not locking more than min liquidity', () => {
@@ -353,17 +278,13 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::locked-amount-not-enough'
-        );
+        await expect(this.addLiquidityOfUserToJobTx).to.be.revertedWith('Keep3rLiquidityManager::locked-amount-not-enough');
       });
     });
     when('adding available liquidity and more than min', () => {
       when('job didnt have that liquidity before', () => {
         given(async function () {
-          this.initialJobLiquidities = await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidities(
-            this.jobAddress
-          );
+          this.initialJobLiquidities = await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidities(this.jobAddress);
           this.addLiquidityOfUserToJobTx = keep3rLiquidityManagerUserJobsLiquditiyHandler.addLiquidityOfUserToJob(
             owner.address,
             this.liquidityAddress,
@@ -373,11 +294,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         });
         then('adds liquidity to job on user', async function () {
           expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(
-              owner.address,
-              this.jobAddress,
-              this.liquidityAddress
-            )
+            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(owner.address, this.jobAddress, this.liquidityAddress)
           ).to.equal(this.minAmount);
         });
         then('increases locked liquidity of user', async function () {
@@ -390,29 +307,18 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
           ).to.equal(this.minAmount);
         });
         then('reduces idle liquidity of user', async function () {
-          expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(
-              owner.address,
-              this.liquidityAddress
-            )
-          ).to.equal(this.idleAmount.sub(this.minAmount));
+          expect(await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(owner.address, this.liquidityAddress)).to.equal(
+            this.idleAmount.sub(this.minAmount)
+          );
         });
         then('it adds lp to job', async function () {
           expect(
-            _.difference(
-              await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidities(
-                this.jobAddress
-              ),
-              this.initialJobLiquidities
-            )
+            _.difference(await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidities(this.jobAddress), this.initialJobLiquidities)
           ).to.deep.equal([this.liquidityAddress]);
         });
         then('increases desired liquidity amount of job', async function () {
           expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(
-              this.jobAddress,
-              this.liquidityAddress
-            )
+            await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(this.jobAddress, this.liquidityAddress)
           ).to.equal(this.minAmount);
         });
       });
@@ -433,11 +339,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         });
         then('adds liquidity to job on user', async function () {
           expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(
-              owner.address,
-              this.jobAddress,
-              this.liquidityAddress
-            )
+            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(owner.address, this.jobAddress, this.liquidityAddress)
           ).to.equal(this.minAmount.mul(2));
         });
         then('increases locked liquidity of user', async function () {
@@ -450,19 +352,13 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
           ).to.equal(this.minAmount.mul(2));
         });
         then('reduces idle liquidity of user', async function () {
-          expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(
-              owner.address,
-              this.liquidityAddress
-            )
-          ).to.equal(this.idleAmount.sub(this.minAmount.mul(2)));
+          expect(await keep3rLiquidityManagerUserJobsLiquditiyHandler.userLiquidityIdleAmount(owner.address, this.liquidityAddress)).to.equal(
+            this.idleAmount.sub(this.minAmount.mul(2))
+          );
         });
         then('increases desired liquidity amount of job', async function () {
           expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(
-              this.jobAddress,
-              this.liquidityAddress
-            )
+            await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(this.jobAddress, this.liquidityAddress)
           ).to.equal(this.minAmount.mul(2));
         });
       });
@@ -475,10 +371,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       this.jobAddress = await wallet.generateRandomAddress();
       this.jobLiquidityAmount = utils.parseEther('10');
       this.minAmount = utils.parseEther('1');
-      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(
-        this.liquidityAddress,
-        this.minAmount
-      );
+      await keep3rLiquidityManagerUserJobsLiquditiyHandler.setMinAmount(this.liquidityAddress, this.minAmount);
       await keep3rLiquidityManagerUserJobsLiquditiyHandler.setJobLiquidityDesiredAmount(
         this.jobAddress,
         this.liquidityAddress,
@@ -507,9 +400,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.subLiquidityTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::not-enough-lp-in-job'
-        );
+        await expect(this.subLiquidityTx).to.be.revertedWith('Keep3rLiquidityManager::not-enough-lp-in-job');
       });
     });
     when('reducing liquidity to less than minimum', () => {
@@ -522,9 +413,7 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
         );
       });
       then('tx is reverted with reason', async function () {
-        await expect(this.subLiquidityTx).to.be.revertedWith(
-          'Keep3rLiquidityManager::locked-amount-not-enough'
-        );
+        await expect(this.subLiquidityTx).to.be.revertedWith('Keep3rLiquidityManager::locked-amount-not-enough');
       });
     });
     when('reducing liquidity of job from user', () => {
@@ -539,32 +428,22 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       });
       then('job liquidity amount of user is reduced', async function () {
         expect(
-          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(owner.address, this.jobAddress, this.liquidityAddress)
+        ).to.equal(this.minAmount);
+      });
+      then('locked job liquidity amount of user is not modified', async function () {
+        expect(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityLockedAmount(
             owner.address,
             this.jobAddress,
             this.liquidityAddress
           )
-        ).to.equal(this.minAmount);
+        ).to.equal(this.jobLiquidityAmount);
       });
-      then(
-        'locked job liquidity amount of user is not modified',
-        async function () {
-          expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityLockedAmount(
-              owner.address,
-              this.jobAddress,
-              this.liquidityAddress
-            )
-          ).to.equal(this.jobLiquidityAmount);
-        }
-      );
       then('desired liquidity in job is reduced', async function () {
-        expect(
-          await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(
-            this.jobAddress,
-            this.liquidityAddress
-          )
-        ).to.equal(this.minAmount);
+        expect(await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(this.jobAddress, this.liquidityAddress)).to.equal(
+          this.minAmount
+        );
       });
     });
     when('setting liquidity of job to zero', () => {
@@ -579,32 +458,22 @@ describe('Keep3rLiquidityManagerUserJobsLiquidityHandler', () => {
       });
       then('job liquidity amount of user is set to zero', async function () {
         expect(
-          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityAmount(owner.address, this.jobAddress, this.liquidityAddress)
+        ).to.equal(0);
+      });
+      then('locked job liquidity amount of user is not modified', async function () {
+        expect(
+          await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityLockedAmount(
             owner.address,
             this.jobAddress,
             this.liquidityAddress
           )
-        ).to.equal(0);
+        ).to.equal(this.jobLiquidityAmount);
       });
-      then(
-        'locked job liquidity amount of user is not modified',
-        async function () {
-          expect(
-            await keep3rLiquidityManagerUserJobsLiquditiyHandler.userJobLiquidityLockedAmount(
-              owner.address,
-              this.jobAddress,
-              this.liquidityAddress
-            )
-          ).to.equal(this.jobLiquidityAmount);
-        }
-      );
       then('desired liquidity in job is set to zero', async function () {
-        expect(
-          await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(
-            this.jobAddress,
-            this.liquidityAddress
-          )
-        ).to.equal(0);
+        expect(await keep3rLiquidityManagerUserJobsLiquditiyHandler.jobLiquidityDesiredAmount(this.jobAddress, this.liquidityAddress)).to.equal(
+          0
+        );
       });
     });
   });

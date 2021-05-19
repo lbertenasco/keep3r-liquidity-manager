@@ -32,9 +32,7 @@ module.exports = {
           },
           staticMainnet: {
             url: process.env.MAINNET_HTTPS_URL,
-            accounts: [
-              '0x0000000000000000000000000000000000000000000000000000000000000001',
-            ],
+            accounts: ['0x0000000000000000000000000000000000000000000000000000000000000001'],
             gasPrice: 1, // 1 wei
           },
         },

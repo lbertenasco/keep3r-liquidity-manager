@@ -8,7 +8,7 @@ let cachedBlocks: any = {};
 
 async function main() {
   await hre.run('compile');
-  await getJobProvenance('0x5efD850044Ba76b8ffE49437CB301be3568bA696');
+  await getJobProvenance('0xaed599AADfEE8e32Cedb59db2b1120d33A7bACFD');
 }
 
 const getJobProvenance = async (job: string) => {
@@ -28,14 +28,14 @@ const getJobProvenance = async (job: string) => {
     12460567
   );
   let logs: any[] = [];
-  const setJobfilteredLogs = setJobLogs.filter((log) => {
+  const setJobFilteredLogs = setJobLogs.filter((log) => {
     return log.args!._job == job;
   });
-  for (let i = 0; i < setJobfilteredLogs.length; i++) {
+  for (let i = 0; i < setJobFilteredLogs.length; i++) {
     logs.push({
-      ...setJobfilteredLogs[i],
+      ...setJobFilteredLogs[i],
       type: 'set',
-      timestamp: await getBlockTimestamp(setJobfilteredLogs[i].blockNumber),
+      timestamp: await getBlockTimestamp(setJobFilteredLogs[i].blockNumber),
     });
   }
   const jobWorks = await liqManagerJob.queryFilter(
@@ -70,26 +70,24 @@ const getJobProvenance = async (job: string) => {
     logs.push({
       ...jobForcedWorksFilteredLogs[i],
       type: 'forceWork',
-      timestamp: await getBlockTimestamp(
-        jobForcedWorksFilteredLogs[i].blockNumber
-      ),
+      timestamp: await getBlockTimestamp(jobForcedWorksFilteredLogs[i].blockNumber),
     });
   }
   logs.sort((x, y) => x.timestamp - y.timestamp);
-  console.log('\n***********\n');
+  console.log('***********');
   logs.forEach((log) => {
-    console.log(log);
     console.log('type', log.type);
+    if (log.type === 'set') console.log('amount', utils.formatEther(log.args._amount));
+    console.log('hash', log.transactionHash);
     console.log('block number', log.blockNumber);
     // console.log('timestamp', log.timestamp);
     // console.log('tx hash', log.transactionHash);
-    console.log('\n***********\n');
+    console.log('***********');
   });
 };
 
 const getBlockTimestamp = async (blockNumber: number) => {
-  if (cachedBlocks.hasOwnProperty(blockNumber))
-    return cachedBlocks[blockNumber];
+  if (cachedBlocks.hasOwnProperty(blockNumber)) return cachedBlocks[blockNumber];
   const timestamp = (await ethers.provider.getBlock(blockNumber)).timestamp;
   cachedBlocks[blockNumber] = timestamp;
   return timestamp;

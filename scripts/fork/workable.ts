@@ -14,9 +14,7 @@ async function main() {
       method: 'hardhat_impersonateAccount',
       params: [config.accounts.mainnet.keeper],
     });
-    const keeper = (owner.provider as any).getUncheckedSigner(
-      config.accounts.mainnet.keeper
-    );
+    const keeper = (owner.provider as any).getUncheckedSigner(config.accounts.mainnet.keeper);
 
     const keep3rLiquidityManagerJob = await ethers.getContractAt(
       'Keep3rLiquidityManagerJob',

@@ -28,25 +28,11 @@ function promptAndSubmit(Keep3rLiquidityManager: ContractFactory) {
           console.time('Keep3rLiquidityManager deployed');
           const escrowContracts = config.contracts.mainnet.escrow;
           const klmContracts = config.contracts.mainnet.klm;
-          console.log(
-            escrowContracts.keep3r,
-            klmContracts.escrow1,
-            klmContracts.escrow2
-          );
-          const keep3rLiquidityManager = await Keep3rLiquidityManager.deploy(
-            escrowContracts.keep3r,
-            klmContracts.escrow1,
-            klmContracts.escrow2
-          );
+          console.log(escrowContracts.keep3r, klmContracts.escrow1, klmContracts.escrow2);
+          const keep3rLiquidityManager = await Keep3rLiquidityManager.deploy(escrowContracts.keep3r, klmContracts.escrow1, klmContracts.escrow2);
           console.timeEnd('Keep3rLiquidityManager deployed');
-          console.log(
-            'Keep3rLiquidityManager address:',
-            keep3rLiquidityManager.address
-          );
-          console.log(
-            'PLEASE: change .config.json & example.config.json keep3rLiquidityManager address to:',
-            keep3rLiquidityManager.address
-          );
+          console.log('Keep3rLiquidityManager address:', keep3rLiquidityManager.address);
+          console.log('PLEASE: change .config.json & example.config.json keep3rLiquidityManager address to:', keep3rLiquidityManager.address);
           resolve();
         } else {
           console.error('Aborted!');

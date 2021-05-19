@@ -11,9 +11,7 @@ const prompt = new Confirm({
 
 async function main() {
   await hre.run('compile');
-  const Keep3rEscrow = await ethers.getContractFactory(
-    'contracts/escrow/Keep3rEscrow.sol:Keep3rEscrow'
-  );
+  const Keep3rEscrow = await ethers.getContractFactory('contracts/escrow/Keep3rEscrow.sol:Keep3rEscrow');
 
   await promptAndSubmit(Keep3rEscrow);
 }
@@ -28,12 +26,8 @@ function promptAndSubmit(Keep3rEscrow: ContractFactory) {
           console.time('Keep3rEscrows deployed');
           const escrowContracts = config.contracts.mainnet.escrow;
           console.log(escrowContracts.keep3r);
-          const keep3rEscrow1 = await Keep3rEscrow.deploy(
-            escrowContracts.keep3r
-          );
-          const keep3rEscrow2 = await Keep3rEscrow.deploy(
-            escrowContracts.keep3r
-          );
+          const keep3rEscrow1 = await Keep3rEscrow.deploy(escrowContracts.keep3r);
+          const keep3rEscrow2 = await Keep3rEscrow.deploy(escrowContracts.keep3r);
           console.timeEnd('Keep3rEscrows deployed');
           console.log('Keep3rEscrow1 address:', keep3rEscrow1.address);
           console.log('Keep3rEscrow2 address:', keep3rEscrow2.address);
