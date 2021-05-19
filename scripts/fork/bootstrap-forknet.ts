@@ -17,8 +17,7 @@ async function main() {
   await new Promise(async () => {
     let lpWhale: JsonRpcSigner;
     const lpWhaleAddress: string = '0x645e4bfd69a692bb7314ee5b0568342d0a34388b';
-    const uniKp3rEthLPAddress: string =
-      '0x87fEbfb3AC5791034fD5EF1a615e9d9627C2665D';
+    const uniKp3rEthLPAddress: string = '0x87fEbfb3AC5791034fD5EF1a615e9d9627C2665D';
     const lpAddress: string = uniKp3rEthLPAddress;
 
     // impersonate lp whale
@@ -28,25 +27,16 @@ async function main() {
     });
     lpWhale = ethers.provider.getSigner(lpWhaleAddress);
 
-    const keep3rLiquidityManager = await ethers.getContractAt(
-      'Keep3rLiquidityManager',
-      config.contracts.mainnet.klm.keep3rLiquidityManager
-    );
+    const keep3rLiquidityManager = await ethers.getContractAt('Keep3rLiquidityManager', config.contracts.mainnet.klm.keep3rLiquidityManager);
     const lp = await ethers.getContractAt('IERC20', lpAddress);
     // impersonate liquidity manager governor
     await network.provider.request({
       method: 'hardhat_impersonateAccount',
       params: [await keep3rLiquidityManager.governor()],
     });
-    const liquidityManagerGovernor = ethers.provider.getSigner(
-      await keep3rLiquidityManager.governor()
-    );
-    await keep3rLiquidityManager
-      .connect(liquidityManagerGovernor)
-      .setMinAmount(lp.address, e18);
-    await keep3rLiquidityManager
-      .connect(liquidityManagerGovernor)
-      .setLiquidityFee(25); // 2.5%
+    const liquidityManagerGovernor = ethers.provider.getSigner(await keep3rLiquidityManager.governor());
+    await keep3rLiquidityManager.connect(liquidityManagerGovernor).setMinAmount(lp.address, e18);
+    await keep3rLiquidityManager.connect(liquidityManagerGovernor).setLiquidityFee(25); // 2.5%
 
     for (const account of accounts) {
       console.log('sending tokens to:', account);

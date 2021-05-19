@@ -7,9 +7,7 @@ describe.skip('Keep3rEscrowMetadata', () => {
   let keep3rEscrowMetadata: Contract;
 
   before('Setup accounts and contracts', async () => {
-    keep3rEscrowMetadataContract = await ethers.getContractFactory(
-      'contracts/mock/escrow/Keep3rEscrowMetadata.sol:Keep3rEscrowMetadataMock'
-    );
+    keep3rEscrowMetadataContract = await ethers.getContractFactory('contracts/mock/escrow/Keep3rEscrowMetadata.sol:Keep3rEscrowMetadataMock');
   });
 
   beforeEach('Deploy necessary contracts', async () => {

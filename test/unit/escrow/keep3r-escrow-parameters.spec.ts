@@ -117,19 +117,14 @@ describe.skip('Keep3rEscrowParameters', () => {
     });
     context('when token balance = 0', () => {
       it('revets with message', async () => {
-        expect(
-          keep3rEscrowParameters.returnLPsToGovernance()
-        ).to.be.revertedWith(
+        expect(keep3rEscrowParameters.returnLPsToGovernance()).to.be.revertedWith(
           'Keep3rEscrowParameters::_returnLPsToGovernance::no-lp-tokens'
         );
       });
     });
     context('when token balanace > 0', () => {
       beforeEach(async () => {
-        await erc20Token.transfer(
-          keep3rEscrowParameters.address,
-          lpsInKeep3rEscrow
-        );
+        await erc20Token.transfer(keep3rEscrowParameters.address, lpsInKeep3rEscrow);
       });
       it('returns lp token balance to governor and emits event', async () => {
         const governance = await keep3rEscrowParameters.governance();
@@ -137,9 +132,7 @@ describe.skip('Keep3rEscrowParameters', () => {
         await expect(keep3rEscrowParameters.returnLPsToGovernance())
           .to.emit(keep3rEscrowParameters, 'LPsReturnedToGovernance')
           .withArgs(governance, lpsInKeep3rEscrow);
-        expect(await erc20Token.balanceOf(governance)).to.equal(
-          lpsInKeep3rEscrow
-        );
+        expect(await erc20Token.balanceOf(governance)).to.equal(lpsInKeep3rEscrow);
       });
     });
   });

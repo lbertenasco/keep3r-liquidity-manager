@@ -67,6 +67,7 @@
     "hardhat-preprocessor": "0.1.2",
     "husky": "5.2.0",
     "lodash": "4.17.21",
+    "moment": "2.29.1",
     "pinst": "2.1.6",
     "prettier": "2.2.1",
     "prettier-plugin-solidity": "1.0.0-beta.6",
