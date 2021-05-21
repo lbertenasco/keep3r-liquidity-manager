@@ -129,14 +129,11 @@ describe.only('Keep3rLiquidityManager', () => {
 
         console.log('# add liquidity');
         await keep3rLiquidityManager.connect(governor).addLiquidityToJob(escrow1.address, slpETHKP3R, jobAddress, slpGovernorAmount);
-
         await logKeeperJobData(jobAddress);
         await logJobData(jobAddress, owner._address);
 
         console.log('# wait 3 days');
         await advanceDays(3);
-
-        await logKeeperJobData(jobAddress);
         await logJobData(jobAddress, owner._address);
 
         console.log('# apply credit');
@@ -145,19 +142,23 @@ describe.only('Keep3rLiquidityManager', () => {
         // forceWork
         console.log('# forceWork');
         await keep3rLiquidityManager.connect(governor).forceWork(jobAddress);
-
         await logKeeperJobData(jobAddress);
         await logJobData(jobAddress, owner._address);
 
         console.log('# wait 14 days');
         await advanceDays(14);
+        await logJobData(jobAddress, owner._address);
+
         console.log('# forceWork');
         await keep3rLiquidityManager.connect(governor).forceWork(jobAddress);
         await logKeeperJobData(jobAddress);
         await logJobData(jobAddress, owner._address);
 
+        console.log('# remove user liquidity');
         await keep3rLiquidityManager.connect(owner).removeIdleLiquidityFromJob(slpETHKP3R, jobAddress, amount, { gasPrice: 0 });
         await keep3rLiquidityManager.connect(owner).withdrawLiquidity(slpETHKP3R, amount);
+
+        // TODO add 2 wei liquidity to job to avoid lock
       }
     });
     it.skip('[DOES NOT WORK] add 1wei LP and try work to increase cycle', async () => {
