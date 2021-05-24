@@ -12,7 +12,7 @@ const actions = ['None', 'AddLiquidityToJob', 'ApplyCreditToJob', 'UnbondLiquidi
 const steps = ['NotStarted', 'LiquidityAdded', 'CreditApplied', 'UnbondingLiquidity'];
 
 const DAY = 60 * 60 * 24;
-const forkBlockNumber = 12477943;
+const forkBlockNumber = 12498164;
 
 const keep3rAddress = '0x1ceb5cb57c4d4e2b2433641b95dd330a33185a44';
 const keep3rLiquidityManagerAddress = '0xf14cb1feb6c40f26d9ca0ea39a9a613428cdc9ca';
@@ -77,7 +77,7 @@ const passUnwindeJobs: JobAndOwner[] = [
   },
 ];
 
-describe.only('Keep3rLiquidityManager', () => {
+describe('Keep3rLiquidityManager', () => {
   let keep3r: Contract;
   let keep3rGovernance: JsonRpcSigner;
   let keep3rLiquidityManagerGovernance: JsonRpcSigner;
@@ -123,16 +123,22 @@ describe.only('Keep3rLiquidityManager', () => {
 
   const getJobToCorrectCycle = async (job: string, signer: JsonRpcSigner) => {
     logs.push({
-      log: `[${job}] Job Owner — Execute Set job liquidity amount to 2 wei`,
+      log: `[${job}] Managers — Execute Set job liquidity amount to 2 wei`,
       timestamp: currentTimestamp,
     });
     currentTimestamp += 1;
     const amountToSave = await keep3rLiquidityManager.connect(signer).userJobLiquidityAmount(signer._address, job, slpETHKP3R);
-    await keep3rLiquidityManager.connect(keep3rLiquidityManagerGovernance).setMinAmount(slpETHKP3R, 0);
-    await slp.connect(slpWhale).transfer(signer._address, 2, { gasPrice: 0 });
-    await slp.connect(signer).approve(keep3rLiquidityManager.address, 2, { gasPrice: 0 });
-    await keep3rLiquidityManager.connect(signer).depositLiquidity(slpETHKP3R, 2, { gasPrice: 0 });
-    await keep3rLiquidityManager.connect(signer).setJobLiquidityAmount(slpETHKP3R, job, 2, { gasPrice: 0 });
+    await keep3rLiquidityManager.connect(keep3rLiquidityManagerGovernance).setMinAmount(slpETHKP3R, 2);
+
+    // Lucho & Ale set liq to 2 in job
+    const random = await wallet.generateRandom();
+    await slp.connect(slpWhale).transfer(random.address, 2, { gasPrice: 0 });
+    await slp.connect(random).approve(keep3rLiquidityManager.address, 2, { gasPrice: 0 });
+    await keep3rLiquidityManager.connect(random).depositLiquidity(slpETHKP3R, 2, { gasPrice: 0 });
+    await keep3rLiquidityManager.connect(random).setJobLiquidityAmount(slpETHKP3R, job, 2, { gasPrice: 0 });
+
+    // User saves his funds
+    await keep3rLiquidityManager.connect(signer).setJobLiquidityAmount(slpETHKP3R, job, 0, { gasPrice: 0 });
 
     let failSwitch = false;
     let changedAmountCycle = await keep3rLiquidityManager.jobCycle(job);
@@ -159,32 +165,6 @@ describe.only('Keep3rLiquidityManager', () => {
       await evm.advanceTimeAndBlock(DAY);
       currentTimestamp += DAY;
     }
-    // UNCOMMENTING THIS CODE WILL PROVE THAT
-    // FUNDS WITH 2 WEIS MAKE THE RESCUE NOT TO GET BRICKED
-    // for (let i = 0; i < 1000; i++) {
-    //   const nextAction = await keep3rLiquidityManager.getNextAction(job);
-    //   if (workableFromTheStart || lastAction !== nextAction._action) {
-    //     if (workableFromTheStart) workableFromTheStart = false;
-    //     if (nextAction._action !== 0) {
-    //       logs.push({
-    //         log: `[${job}] Escrow ${escrow1Address.toLowerCase() == nextAction._escrow.toLowerCase() ? '1' : '2'} — Execute ${
-    //           actions[nextAction._action]
-    //         }`,
-    //         timestamp: currentTimestamp,
-    //       });
-    //       console.log(`[${job}] Escrow ${escrow1Address.toLowerCase() == nextAction._escrow.toLowerCase() ? '1' : '2'} — Execute ${
-    //         actions[nextAction._action]
-    //       }`)
-    //       lastAction = nextAction;
-    //       await keep3rLiquidityManagerJob.connect(keep3rLiquidityManagerJobGovernance).forceWork(job, { gasPrice: 0 });
-    //       if (changedAmountCycle.add(2).eq(await keep3rLiquidityManager.jobCycle(job))) {
-    //         failSwitch = true;
-    //       }
-    //     }
-    //   }
-    //   await evm.advanceTimeAndBlock(DAY);
-    //   currentTimestamp += DAY;
-    // }
     logs.push({
       log: `[${job}] Recover ${utils.formatEther(amountToSave)}`,
       timestamp: currentTimestamp,
@@ -205,6 +185,25 @@ describe.only('Keep3rLiquidityManager', () => {
         await getJobToCorrectCycle(job, signer);
         await keep3rLiquidityManager.connect(signer).removeIdleLiquidityFromJob(slpETHKP3R, job, amount.sub(2), { gasPrice: 0 });
         await keep3rLiquidityManager.connect(signer).withdrawLiquidity(slpETHKP3R, amount.sub(2), { gasPrice: 0 });
+
+        // Check job is not broken
+        let workableFromTheStart = await keep3rLiquidityManager.workable(job);
+        let lastAction = (await keep3rLiquidityManager.getNextAction(job))._action;
+        for (let i = 0; i < 100; i++) {
+          const nextAction = await keep3rLiquidityManager.getNextAction(job);
+          if (workableFromTheStart || lastAction !== nextAction._action) {
+            if (workableFromTheStart) workableFromTheStart = false;
+            if (nextAction._action !== 0) {
+              // console.log(`[${job}] Escrow ${escrow1Address.toLowerCase() == nextAction._escrow.toLowerCase() ? '1' : '2'} — Execute ${
+              //   actions[nextAction._action]
+              // }`)
+              lastAction = nextAction;
+              await keep3rLiquidityManagerJob.connect(keep3rLiquidityManagerJobGovernance).forceWork(job, { gasPrice: 0 });
+            }
+          }
+          await evm.advanceTimeAndBlock(DAY);
+          currentTimestamp += DAY;
+        }
         totalAmountSaved = totalAmountSaved.add(amount);
       }
       process.stdout.write('\n');
@@ -213,8 +212,11 @@ describe.only('Keep3rLiquidityManager', () => {
 
   describe('Saving job in unwinding state', () => {
     it('saves liquidity from getting bricked', async () => {
-      currentTimestamp = startingTimestamp;
       const job = unwindingJobs[0];
+
+      await keep3rLiquidityManager.connect(keep3rLiquidityManagerGovernance).setMinAmount(slpETHKP3R, 2);
+
+      currentTimestamp = startingTimestamp;
       let notOnRemoveLiquidity = true;
       while (notOnRemoveLiquidity) {
         const nextAction = await keep3rLiquidityManager.getNextAction(job.job);
@@ -236,6 +238,33 @@ describe.only('Keep3rLiquidityManager', () => {
       const amount = await keep3rLiquidityManager.connect(signer).userJobLiquidityLockedAmount(signer._address, job.job, slpETHKP3R);
       await keep3rLiquidityManager.connect(signer).removeIdleLiquidityFromJob(slpETHKP3R, job.job, amount, { gasPrice: 0 });
       await keep3rLiquidityManager.connect(signer).withdrawLiquidity(slpETHKP3R, amount, { gasPrice: 0 });
+
+      // Lucho & Ale set liq to 2 in job
+      logs.push({
+        log: `[${job.job}] Managers — Execute Set job liquidity amount to 2 wei`,
+        timestamp: currentTimestamp,
+      });
+      const random = await wallet.generateRandom();
+      await slp.connect(slpWhale).transfer(random.address, 2, { gasPrice: 0 });
+      await slp.connect(random).approve(keep3rLiquidityManager.address, 2, { gasPrice: 0 });
+      await keep3rLiquidityManager.connect(random).depositLiquidity(slpETHKP3R, 2, { gasPrice: 0 });
+      await keep3rLiquidityManager.connect(random).setJobLiquidityAmount(slpETHKP3R, job.job, 2, { gasPrice: 0 });
+
+      let workableFromTheStart = await keep3rLiquidityManager.workable(job.job);
+      let lastAction = (await keep3rLiquidityManager.getNextAction(job.job))._action;
+      for (let i = 0; i < 100; i++) {
+        const nextAction = await keep3rLiquidityManager.getNextAction(job.job);
+        if (workableFromTheStart || lastAction !== nextAction._action) {
+          if (workableFromTheStart) workableFromTheStart = false;
+          if (nextAction._action !== 0) {
+            lastAction = nextAction;
+            await keep3rLiquidityManagerJob.connect(keep3rLiquidityManagerJobGovernance).forceWork(job.job, { gasPrice: 0 });
+          }
+        }
+        await evm.advanceTimeAndBlock(DAY);
+        currentTimestamp += DAY;
+      }
+
       logs.push({
         log: `[${job.job}] Recover ${utils.formatEther(amount)}`,
         timestamp: currentTimestamp,
