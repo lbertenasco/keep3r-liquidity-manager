@@ -8,7 +8,7 @@ let cachedBlocks: any = {};
 
 async function main() {
   await hre.run('compile');
-  await getJobProvenance('0xaed599AADfEE8e32Cedb59db2b1120d33A7bACFD');
+  await getJobProvenance('0x02027bDA2425204f152B8aa35Fb78687D65E1AF5');
 }
 
 const getJobProvenance = async (job: string) => {
@@ -25,7 +25,7 @@ const getJobProvenance = async (job: string) => {
       topics: [id('LiquidityOfJobSet(address,address,address,uint256)')],
     },
     12104114,
-    12460567
+    12498986
   );
   let logs: any[] = [];
   const setJobFilteredLogs = setJobLogs.filter((log) => {
@@ -43,7 +43,7 @@ const getJobProvenance = async (job: string) => {
       topics: [id('Worked(address,address,uint256,bool)')],
     },
     12104538,
-    12460567
+    12498986
   );
   const jobWorksFilteredLogs = jobWorks.filter((log) => {
     return log.args!._job == job;
@@ -60,7 +60,7 @@ const getJobProvenance = async (job: string) => {
       topics: [id('ForceWorked(address)')],
     },
     12104538,
-    12460567
+    12498986
   );
   const jobForcedWorksFilteredLogs = jobForcedWorks.filter((log) => {
     return log.args!._job == job;

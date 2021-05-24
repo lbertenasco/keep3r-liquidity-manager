@@ -16,7 +16,7 @@ const keep3rContracts = {
   keep3rV1Oracle: '0x73353801921417F465377c8d898c6f4C0270282C',
 };
 
-describe('Keep3rLiquidityManager', () => {
+describe.skip('Keep3rLiquidityManager', () => {
   let owner: SignerWithAddress;
   let alice: SignerWithAddress;
   let bob: SignerWithAddress;
