@@ -12,9 +12,7 @@ const prompt = new Confirm({
 
 async function main() {
   await hre.run('compile');
-  const Keep3rLiquidityManagerJob = await ethers.getContractFactory(
-    'contracts/job/Keep3rLiquidityManagerJob.sol:Keep3rLiquidityManagerJob'
-  );
+  const Keep3rLiquidityManagerJob = await ethers.getContractFactory('contracts/job/Keep3rLiquidityManagerJob.sol:Keep3rLiquidityManagerJob');
 
   await promptAndSubmit(Keep3rLiquidityManagerJob);
 }
@@ -48,10 +46,7 @@ function promptAndSubmit(Keep3rLiquidityManagerJob: ContractFactory) {
             true
           );
           console.timeEnd('Keep3rLiquidityManagerJob deployed');
-          console.log(
-            'Keep3rLiquidityManagerJob address:',
-            keep3rLiquidityManagerJob.address
-          );
+          console.log('Keep3rLiquidityManagerJob address:', keep3rLiquidityManagerJob.address);
           console.log(
             'PLEASE: change .config.json & example.config.json keep3rLiquidityManagerJob address to:',
             keep3rLiquidityManagerJob.address

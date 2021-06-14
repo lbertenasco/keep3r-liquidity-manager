@@ -21,9 +21,7 @@ const encrypt = async (stringToEncrypt: string): Promise<string> => {
 };
 
 const encryptSeveral = async (plainStrings: string[]): Promise<string[]> => {
-  return await Promise.all(
-    _.map(plainStrings, (plainString) => encrypt(plainString))
-  );
+  return await Promise.all(_.map(plainStrings, (plainString) => encrypt(plainString)));
 };
 
 const decrypt = async (encryptedString: string): Promise<string> => {
@@ -35,12 +33,8 @@ const decrypt = async (encryptedString: string): Promise<string> => {
   return decryptedInfo.Plaintext!.toString();
 };
 
-const decryptSeveral = async (
-  encryptedStrings: string[]
-): Promise<string[]> => {
-  return await Promise.all(
-    _.map(encryptedStrings, (encryptedString) => decrypt(encryptedString))
-  );
+const decryptSeveral = async (encryptedStrings: string[]): Promise<string[]> => {
+  return await Promise.all(_.map(encryptedStrings, (encryptedString) => decrypt(encryptedString)));
 };
 
 const getDecryptedPrivateKey = async (): Promise<string> => {

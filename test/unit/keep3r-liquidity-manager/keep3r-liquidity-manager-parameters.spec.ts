@@ -19,9 +19,7 @@ describe('Keep3rLiquidityManagerParameters', () => {
   });
 
   beforeEach('Deploy necessary contracts', async () => {
-    keep3rLiquidityManagerParameters = await keep3rLiquidityManagerParametersContract.deploy(
-      '0x0000000000000000000000000000000000000002'
-    );
+    keep3rLiquidityManagerParameters = await keep3rLiquidityManagerParametersContract.deploy('0x0000000000000000000000000000000000000002');
   });
 
   describe('constructor', () => {
@@ -64,20 +62,14 @@ describe('Keep3rLiquidityManagerParameters', () => {
       let tx: TransactionResponse;
       const newKeep3rV1 = '0x2222222222222222222222222222222222222221';
       given(async () => {
-        const setTx = await keep3rLiquidityManagerParameters.setKeep3rV1(
-          newKeep3rV1
-        );
+        const setTx = await keep3rLiquidityManagerParameters.setKeep3rV1(newKeep3rV1);
         tx = setTx;
       });
       then('event is emitted correctly', async () => {
-        await expect(tx)
-          .to.emit(keep3rLiquidityManagerParameters, 'Keep3rV1Set')
-          .withArgs(newKeep3rV1);
+        await expect(tx).to.emit(keep3rLiquidityManagerParameters, 'Keep3rV1Set').withArgs(newKeep3rV1);
       });
       then('keep3rV1 is modified', async () => {
-        expect(await keep3rLiquidityManagerParameters.keep3rV1()).to.equal(
-          newKeep3rV1
-        );
+        expect(await keep3rLiquidityManagerParameters.keep3rV1()).to.equal(newKeep3rV1);
       });
     });
   });
