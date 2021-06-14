@@ -13,6 +13,7 @@ module.exports = {
       ? {}
       : {
           hardhat: {
+            accounts: [{ privateKey: process.env.MAINNET_PRIVATE_KEY, balance: '10000000000000000000000' }],
             forking: {
               enabled: process.env.FORK ? true : false,
               url: process.env.MAINNET_HTTPS_URL,
@@ -28,7 +29,7 @@ module.exports = {
           mainnet: {
             url: process.env.MAINNET_HTTPS_URL,
             accounts: [process.env.MAINNET_PRIVATE_KEY],
-            gasPrice: 161000000000, // 161 gwei
+            gasPrice: 61000000000, // 61 gwei
           },
           staticMainnet: {
             url: process.env.MAINNET_HTTPS_URL,

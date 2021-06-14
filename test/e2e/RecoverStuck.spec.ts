@@ -12,7 +12,7 @@ const actions = ['None', 'AddLiquidityToJob', 'ApplyCreditToJob', 'UnbondLiquidi
 const steps = ['NotStarted', 'LiquidityAdded', 'CreditApplied', 'UnbondingLiquidity'];
 
 const DAY = 60 * 60 * 24;
-const forkBlockNumber = 12498164;
+const forkBlockNumber = 12569679;
 
 const keep3rAddress = '0x1ceb5cb57c4d4e2b2433641b95dd330a33185a44';
 const keep3rLiquidityManagerAddress = '0xf14cb1feb6c40f26d9ca0ea39a9a613428cdc9ca';
@@ -123,21 +123,21 @@ describe('Keep3rLiquidityManager', () => {
         await logJobData(jobAddress, owner._address);
 
         // set liquidity
-        console.log('# set 2 wei liqudiity');
-        const slpGovernorAmount = 2;
-        await slp.connect(governor).transfer(escrow1.address, slpGovernorAmount);
+        // console.log('# set 2 wei liqudiity');
+        // const slpGovernorAmount = 2;
+        // await slp.connect(governor).transfer(escrow1.address, slpGovernorAmount);
 
-        console.log('# add liquidity');
-        await keep3rLiquidityManager.connect(governor).addLiquidityToJob(escrow1.address, slpETHKP3R, jobAddress, slpGovernorAmount);
-        await logKeeperJobData(jobAddress);
-        await logJobData(jobAddress, owner._address);
+        // console.log('# add liquidity');
+        // await keep3rLiquidityManager.connect(governor).addLiquidityToJob(escrow1.address, slpETHKP3R, jobAddress, slpGovernorAmount);
+        // await logKeeperJobData(jobAddress);
+        // await logJobData(jobAddress, owner._address);
 
-        console.log('# wait 3 days');
-        await advanceDays(3);
-        await logJobData(jobAddress, owner._address);
+        // console.log('# wait 3 days');
+        // await advanceDays(3);
+        // await logJobData(jobAddress, owner._address);
 
-        console.log('# apply credit');
-        await keep3rLiquidityManager.connect(governor).applyCreditToJob(escrow1.address, slpETHKP3R, jobAddress);
+        // console.log('# apply credit');
+        // await keep3rLiquidityManager.connect(governor).applyCreditToJob(escrow1.address, slpETHKP3R, jobAddress);
 
         // forceWork
         console.log('# forceWork');
